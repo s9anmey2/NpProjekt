@@ -2,7 +2,7 @@ package main;
 
 import java.util.Hashtable;
 
-public class Column {
+public class Column extends Thread{
 	Hashtable<Integer, Double> values = new Hashtable<Integer,Double>();
 	Hashtable<Integer, Double> outputLeft = new Hashtable<Integer,Double>();
 	Hashtable<Integer, Double> outputRight = new Hashtable<Integer,Double>();
