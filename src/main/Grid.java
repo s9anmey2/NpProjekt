@@ -3,8 +3,9 @@ package main;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import np2015.ImageConvertible;
 
-public class Grid {
+public class Grid implements ImageConvertible{
 	
 	/**TODO Wir müssen aus Columns noch eine Unterklasse von Thread machen.**/
 	
@@ -44,6 +45,12 @@ public class Grid {
 			iterate(iter);
 			temp.join();
 		}
+	}
+
+	@Override
+	public double getValueAt(int column, int row) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }
