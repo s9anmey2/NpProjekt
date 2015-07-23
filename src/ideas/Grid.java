@@ -1,4 +1,4 @@
-package main;
+package ideas;
 
 import java.util.Hashtable;
 import java.util.Iterator;

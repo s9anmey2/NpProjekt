@@ -14,7 +14,7 @@ public class NPOsmose {
 		String json = "";
 		// read data in
 		if (args.length != 0) {
-			Path path = Paths.get(args[0]);
+			Path path = Paths.get(args[1]);
 			try {
 				json = new String(Files.readAllBytes(path)); 
 			} catch (IOException e) {
@@ -30,5 +30,3 @@ public class NPOsmose {
 	}
 
 }
-
-
