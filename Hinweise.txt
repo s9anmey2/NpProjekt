@@ -1,0 +1,11 @@
+- In den Kommentaren auch Funktionalitaet begründen. Bei Java Funktionen reicht es, den relevanten Eintrag im JavaDoc zu verlinken. 
+
+- Wir sollten uns den Exchanger doch noch anschauen, wenn wir mehr Nebenläufigkeit erzeugen wollen. Unsere Lösung funktioniert zwar, aber ist halt sehr sequentiell. Der Exchanger kann im Nebenläufigen Kontext gut arbeiten.
+
+- Daraus folgt aber, dass globale Iterationsschritte und terminale Zustände nicht mehr notwendig zusammen fallen. Das Join Fork Modell ist dannicht mehr so geeignet und man hat halt das Problem mit unterschiedlich schnellen Threads. 
+
+- globale Horizontale Konvergenz, d.h. ouflow inflow differenz impliziert globale Konvergenz.
+
+- ConcurrentHashMap!
+
+- Executor, Java Concurrency Funktionalität, s. JavaDoc, angucken, denn der übernimmt die Verwaltung der Threads, was bisher die Rekursion tun sollte, die wir (Marlene) aber auch beweisen müssten.
