@@ -3,6 +3,14 @@ package ideas;
 import java.util.Hashtable;
 
 public class Column extends Thread{
+	
+	/**
+	 * IDEE: statt der DeleteFlag machen wir einen bufferedIntchan. Wenn gilt column vertical sum == 0, dann 
+	 * sendet nodeeval die id der Spalte in den chan. Am Ende eines globalen iterationsschrittes iteriert der 
+	 * supervisor über den chan, und löscht jeden thread mit der empfangenen id. Der chan sollte nach Lifo aus-
+	 * geräumt werden und intchan[0]= -1, dann muss nur jede id auf -1 verglichen werden und der supervisor weiß,
+	 * wann er fertig ist.
+	**/
 	Hashtable<Integer, Double> values = new Hashtable<Integer,Double>();
 	Hashtable<Integer, Double> outputLeft = new Hashtable<Integer,Double>();
 	Hashtable<Integer, Double> outputRight = new Hashtable<Integer,Double>();
