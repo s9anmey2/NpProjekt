@@ -5,11 +5,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+//import utility.Logger;
+
 import com.google.gson.Gson;
 
 public class NPOsmose {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
+		/*Logger logger = new Logger();
+		logger.addSingleLine("halalalal", "jawoll bayern 1 0 nieder mit madrid");
+		logger.print();*/
 		Gson gson = new Gson();
 		String json = "";
 		// read data in
