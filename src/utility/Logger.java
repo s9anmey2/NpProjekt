@@ -35,8 +35,8 @@ public class Logger {
 	private final String nl = "\n";
 	private final String onEnter = "//////////////////////NEW NEW NEW NEW NEW NEW NEW\\\\\\\\\\\\\\\\\\\\\\\\\\\\" + nl;
 	private final String onLeave = "//////////////////////END END END END END END END\\\\\\\\\\\\\\\\\\\\\\\\\\\\" + nl; 
-	private final String home= "/home/andreas/Desktop/SoSe_2015/Nebenläufige Programmierung/Programme/NpProjekt/main";
-	
+	private final String home= "../NpProjekt/main";
+
 	public Logger(){
 		String name = "/Logfile_No." + id + ".log.txt";
 		this.file = new  File(home + name);
