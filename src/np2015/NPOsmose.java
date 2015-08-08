@@ -13,7 +13,7 @@ public class NPOsmose {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 	/*	Logger logger = new Logger();
-		logger.addSingleLine("halalalal", "jawoll bayern 1 0 nieder mit madrid");
+		logger.addSingleLine("halalalal", "whatever");
 		logger.print();*/
 	/**/Gson gson = new Gson();
 		String json = "";
@@ -30,7 +30,7 @@ public class NPOsmose {
 		}
 		GraphInfo ginfo = gson.fromJson(json, GraphInfo.class);
 		// Your implementation can now access ginfo to read out all important values
-		ImageConvertible graph = null; // <--- you should implement ImageConvertible to write the graph out
+		ImageConvertible graph = null; //new Grid(ginfo); <--- you should implement ImageConvertible to write the graph out
 		ginfo.write2File("./result.txt", graph);/**/
 	} 
 

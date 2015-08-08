@@ -1,6 +1,7 @@
 package implementation;
 
 import java.util.Hashtable;
+import np2015.GraphInfo;
 
 public class Column extends Thread {
 	
@@ -13,8 +14,10 @@ public class Column extends Thread {
 	private double valueDifference;						// kein Zugriff von außen
 	private double deleteFlag;							// kein Zugriff von außen
 	private double sigma;								// kein Zugriff von außen
-	
-	public Column() {
+	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
+
+	public Column(GraphInfo graph) {
+		this.graph = graph;
 		// TODO Auto-generated constructor stub
 	}
 
