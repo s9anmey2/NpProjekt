@@ -19,7 +19,7 @@ public class GraphInfo implements GuardedCommand {
 	public final ArrayList<double[]> commands = new ArrayList<>();
 
 	
-	public GraphInfo(final int width, final int height, final int epsilon, final double maxOutflow) {
+	public GraphInfo(final int width, final int height, final double epsilon, final double maxOutflow) {
  		this.width = width;
  		this.height = height;
 		this.epsilon = epsilon;
@@ -108,7 +108,7 @@ public class GraphInfo implements GuardedCommand {
 				double[] command = commands.get(i);
 				final double rate = command[0]*x*y + command[1]*x + command[2]*y + command[3];
 				if(maxOutflow == 0.0)
-					return rate/maxOutflow; //WHAT THE ACTUAL FUCK??????
+					return maxOutflow;/*return rate/maxOutflow; *///WHAT THE ACTUAL FUCK??????
 				else
 					return rate;				
 			}
