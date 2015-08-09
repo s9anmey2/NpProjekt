@@ -12,15 +12,19 @@ public class GraphInfo implements GuardedCommand {
 	public final int width;
 	public final int height;
 	private boolean allGuardsAdded = false;
+	public final double epsilon;
+	public final double maxOutflow;
 	public final HashMap<Integer, HashMap<Integer, Double>> column2row2initialValue = new HashMap<>();
 	public final ArrayList<int[]> guards = new ArrayList<>();
 	public final ArrayList<double[]> commands = new ArrayList<>();
 
 	
-	public GraphInfo(final int width, final int height) {
-		this.width = width;
-		this.height = height;
-	}
+	public GraphInfo(final int width, final int height, final int epsilon, final double maxOutflow) {
+ 		this.width = width;
+ 		this.height = height;
+		this.epsilon = epsilon;
+		this.maxOutflow = maxOutflow;
+ 	}
 		
 	public void addInitialEntry(int row, int column, double value) {
 		HashMap<Integer, Double> tmp =  column2row2initialValue.getOrDefault(row, new HashMap<>());
@@ -102,7 +106,11 @@ public class GraphInfo implements GuardedCommand {
 				y <= guard[4]
 			    ) {
 				double[] command = commands.get(i);
-				return command[0]*x*y + command[1]*x + command[2]*y + command[3];
+				final double rate = command[0]*x*y + command[1]*x + command[2]*y + command[3];
+				if(maxOutflow == 0.0)
+					return rate/maxOutflow; //WHAT THE ACTUAL FUCK??????
+				else
+					return rate;				
 			}
 		}
 		return 0;

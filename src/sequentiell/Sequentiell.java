@@ -32,7 +32,7 @@ public class Sequentiell implements ImageConvertible{
 				Iterator<Entry<Integer, Double>> coefficients = column.entrySet().iterator();
 				while(coefficients.hasNext()){
 					++y;
-					/*graph.column2row2initialValue(x,y,Left);*//**Wie das mit dem enum funktioniert, kA. Import oder so 
+					/*graph.column2row2initialValue(x,y,Neighbor.Left);*//**Wie das mit dem enum funktioniert, kA. Import oder so 
 					jedenfalls nich.**/
 					double dummy = coefficients.next().getValue(); /**hier haben wir jetzt einen grid(x,y)=greyvalue
 					 gerechnet wird aber noch nix**/
