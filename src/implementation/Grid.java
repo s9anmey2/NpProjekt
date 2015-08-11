@@ -5,6 +5,8 @@ package implementation;
 
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.TreeSet;
 
 import np2015.GraphInfo;
 import np2015.ImageConvertible;
@@ -27,31 +29,87 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public synchronized void globalIteration() {
-		// TODO
+	
+		/**global iteration legt alle columns an, baut einen Iterator und schmeisst den dann in globalIteration(iteration iter)**/
+		Iterator<Entry<Integer, Column>> columnIter = columns.entrySet().iterator();
+		globalIteration(columnIter);
+		
+		/**passe die gridstruktur fuer die arbeit des exchangers an: fuege dummy spalten hinzu**/
+		addDummyColumns();
+		
+		/**tausche rechten outflow gegen linken outflow zweier benachbarter columns**/
+		for(int i = 0; i < graph.width-1; i++){
+			if(columns.contains(i) && columns.contains(i+1)){
+				Column left = columns.get(i);
+				Column right = columns.get(i+1);
+				Hashtable<Integer, Double> dummy = left.getRight();				
+				left.setRight(right.getLeft());
+				right.setLeft(dummy);				
+			}
+		}//for schleife zu
+		
+		/**neue values der columns berechnen mit rekursiver Methode columnValueComputation(iterator)**/
+		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
+		columnValueComputation(columnIter2);
 	}
 	
-	private void globalIteration(Iterator iter) {
-		// TODO
+	private void globalIteration(Iterator<Entry<Integer, Column>> iter) {
+		
+		/**das wird eine rekursive Methode, die startet solange threads wies welche gibt und wartet auf deren terminieren.**/
+		if(iter.hasNext()){
+			Column current = iter.next().getValue();
+			current.start();
+			globalIteration(iter);
+			try {
+				current.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("globaliteration(iterator) kaputt");
+			}
+		}
 	}
-	
-	public synchronized void columnValueComputation() {
-		// TODO
+
+	private void columnValueComputation(Iterator<Entry<Integer,Column>> iter) {
+		
+		/**benutzt den Wrapper nodeeval um nebenläufig die neuen column eintraege zu berechnen.**/
+		if(iter.hasNext()){
+			NodeEval eval = new NodeEval(iter.next().getValue());
+			eval.start();
+			columnValueComputation(iter);
+			try {
+				eval.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("columnValueComputation kaputt.");
+			}
+		}
 	}
-	
-	private void columnValueComputation(Iterator iter) {
-		// TODO
-	}
-	
-	public synchronized void removeColumns() {
-		// TODO
-	}
-	
-	public synchronized void addColumn(int pos, Column column){
-		columns.put(pos, column);
-	}
-	
-	public synchronized void addDummyColums() {
-		// TODO
+
+	public synchronized void addDummyColumns() {
+		
+		/**iteriert ueber das grid und erganzt rechts und links von existierenden columns leere dummy columns. Dazu merkt es sich die erst die keys 
+		 in einer ersten iteration und fuegt dann ein in einer zweiten.**/
+		TreeSet<Integer> toMake = new TreeSet<>();
+		Iterator<Entry<Integer, Column>> iter = columns.entrySet().iterator();
+		while(iter.hasNext()){
+			Entry<Integer, Column> dummy = iter.next();
+			int key = dummy.getKey();
+			
+			if(!(columns.containsKey(key+1)) && key<graph.width)
+				toMake.add(key +1);
+			if(!(columns.containsKey(key-1)) && key>0)
+				toMake.add(key -1);		
+		}//Ende while schleife
+		
+		/**ergaenzen der dummies**/
+		Iterator<Integer> set = toMake.iterator();
+		while(set.hasNext()){
+			int c = set.next().intValue();
+			columns.put(c, new Column(graph, this, c));
+		}
+		
 	}
 
 	public synchronized Column getColumn(int i) {
@@ -60,8 +118,7 @@ public class Grid implements ImageConvertible {
 	
 	@Override
 	public double getValueAt(int column, int row) {
-		// TODO Auto-generated method stub
-		return 0;
+		return columns.getOrDefault(column, new Column(graph, this, column)).getValue(row);
 	}
 	
 	public synchronized void setLocals(int i){

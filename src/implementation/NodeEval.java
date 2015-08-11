@@ -4,13 +4,13 @@ public class NodeEval extends Thread {
 	
 	private Column column;
 	
-	public NodeEval() {
-		// TODO
+	public NodeEval(Column column) {
+		this.column = column;
 	}
 	
 	@Override
 	public synchronized void run() {
-		// TODO
+		column.computeNewValues();
 	}
 
 }
