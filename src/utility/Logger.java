@@ -28,7 +28,6 @@ import java.io.FileOutputStream;
 
 public class Logger {
 	private LinkedList<String> output = new LinkedList<String>();
-	private static int id; 
 	private File file;
 	private boolean next = true;
 	private final String nl = "\n";
@@ -36,10 +35,9 @@ public class Logger {
 	private final String onLeave = "//////////////////////END END END END END END END\\\\\\\\\\\\\\\\\\\\\\\\\\\\" + nl; 
 	private final String home= "../NpProjekt/main";
 
-	public Logger(){
-		String name = "/Logfile_No." + id + ".log.txt";
+	public Logger(String name){
+		name = name + ".log.txt";
 		this.file = new  File(home + name);
-		Logger.id++;
 		try{
 			file.createNewFile();
 			System.out.println("LogFile is da");

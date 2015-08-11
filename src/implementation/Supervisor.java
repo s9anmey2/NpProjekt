@@ -20,5 +20,9 @@ public class Supervisor {
 		// TODO
 		return null;
 	}
+	
+	public synchronized int getLocals(){
+		return numLocalIterations;
+	}
 
 }

@@ -15,19 +15,29 @@ public class Column extends Thread {
 	private double deleteFlag;							// kein Zugriff von außen
 	private double sigma;								// kein Zugriff von außen
 	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
+	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 
-	public Column(GraphInfo graph) {
+	public Column(GraphInfo graph, Grid grid) {
 		this.graph = graph;
+		this.grid = grid;
 		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public synchronized void run() {
-		// TODO
+		/**berechnet den akku und den horizontalen outflow knotenweise.**/
+		
+		
+		
 	}
 	
 	public synchronized void computeNewValues() {
 		// TODO
+	}
+	
+	
+	public void setValue(int pos, double val){
+		values.put(pos, val);
 	}
 	
 }
