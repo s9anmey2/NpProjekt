@@ -1,8 +1,10 @@
 package implementation;
 
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+
 
 
 
@@ -17,9 +19,8 @@ public class Column extends Thread {
 	
 	private Hashtable<Integer, Double> outLeft;			// geschützt durch explizites Lock, oder besser durch implizites, weil da jeder der das Objekt kennt Zugiff hat? TODO 
 	private Hashtable<Integer, Double> outRight;		// geschützt durch explizites Lock TODO 
-	
-	private Hashtable<Integer, Double> oldvalues;		// kein Zugriff von außen
-	private double valueDifference;						// kein Zugriff von außen
+	Hashtable<Integer, Double> akku;
+
 	private double deleteFlag;							// kein Zugriff von außen, ferner liefen: ganz am schluss wenn noch zeit ist.-
 	private double sigma;								// kein Zugriff von außen, die summe der quadrate der akku werte
 	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
@@ -27,26 +28,45 @@ public class Column extends Thread {
 	private int me;
 	private final double crit;
 
-	public Column(GraphInfo graph, Grid grid, int y) {
+	public Column(GraphInfo graph, Grid grid, int y, boolean isDummy) {
+		
+		/**aufgerufen von grid "echte" spalte.**/
 		double square;
 		this.graph = graph;
 		this.grid = grid;
+		this.values = new Hashtable<>();
+		this.outRight = new Hashtable<>();
+		this.outLeft = new Hashtable<>();
+		this.akku = new Hashtable<>();
 		this.me = y; //y ist die spaltennummer
 		square = graph.epsilon/graph.width;
 		this.crit = square*square;
-		// TODO Auto-generated constructor stub
+		
+		if(!(isDummy)){
+			HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
+			Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
+			
+			while(iter.hasNext()){
+				Entry<Integer,Double> dummy = iter.next();
+				int row = dummy.getKey();
+				double val = dummy.getValue();
+				values.put(row, val);			
+			}
+		}
 	}
 
+	
 	@Override
 	public synchronized void run() {
 		
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
+		outLeft = new Hashtable<>();
+		outRight= new Hashtable<>();
 		int localIterations = grid.getLocals();
 		for (int i=0; i<localIterations; i++){
+			akku = new Hashtable<>();
 			sigma = 0.0;
 			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
-			Hashtable<Integer, Double> akku = new Hashtable<>();
-
 			while(knoten.hasNext()){
 				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
 				
@@ -65,6 +85,7 @@ public class Column extends Thread {
 				/**die summe des outflows wird jetzt vom akku der aktuellen position abgezogen und gesetzt.**/
 				
 				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
+				
 				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 			
@@ -80,7 +101,7 @@ public class Column extends Thread {
 				
 				if(me>0) //if fuer randfall, spalte = 0
 					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);
-				
+					
 				if(me<graph.width)
 					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
 			
@@ -102,6 +123,9 @@ public class Column extends Thread {
 			
 	}
 	
+	
+	
+	
 	private synchronized void addOrReplaceEntry(Hashtable<Integer, Double> map, int key, double val){
 		
 		/**aktualisiert oder ergaenzt eintraege in hashtables**/
@@ -111,6 +135,15 @@ public class Column extends Thread {
 			map.put(key, val);
 	}
 	
+	public double refreshAkku(){
+		/**fuer die sequentielle loesung wichtig. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow **/
+		double sigma=0.0;
+		for (int i=0; i<graph.height; i++){
+			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0) + outRight.getOrDefault(i,0.0);
+			sigma = sigma + val*val;		
+		}
+		return sigma;
+	}
 	
 	public synchronized void computeNewValues() {
 		

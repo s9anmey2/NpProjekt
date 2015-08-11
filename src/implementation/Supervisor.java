@@ -13,12 +13,15 @@ public class Supervisor {
 
 	public Supervisor() {
 		gInfo=null;grid=null;epsilon=0;
-		// TODO Auto-generated constructor stub
 	}
 	
 	public synchronized Grid computeOsmose() {
-		// TODO
-		return null;
+		Grid grid = new Grid(gInfo);
+		boolean converged = false;
+		
+		while(!(converged))
+			converged = grid.globalIteration();
+		return grid;		//berechnung der lokalen schrittzahl fehlt noch.
 	}
 	
 	public synchronized int getLocals(){

@@ -3,6 +3,7 @@
  */
 package implementation;
 
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -22,14 +23,34 @@ public class Grid implements ImageConvertible {
 	
 	public Grid(GraphInfo graph){
 		this.graph = graph;
+		this.columns = new Hashtable<Integer, Column>();
+		
+		/**der konstruktor baut die spalten.**/
+		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
+		
+		while(iter.hasNext()){
+			Entry<Integer, HashMap<Integer, Double>> forGrid = iter.next();
+			HashMap<Integer,Double> spalte =forGrid.getValue();
+			Column column = new Column(graph, this, forGrid.getKey(), false);		
+			columns.put(forGrid.getKey(), column);
+		}//aeußere Schleife
+		
+		
+	}
+	public boolean serialComputation(){
+		
+		/**fuer eine rein sequentielle loesung**/
+		boolean converged = true;
+		addDummyColumns();
+		
+		
+		
+		return converged;
 	}
 	
-	public Grid() {
-		// TODO Auto-generated constructor stub
-	}
-	
-	public synchronized void globalIteration() {
-	
+	public synchronized boolean globalIteration() {
+		boolean converged = true;
+
 		/**global iteration legt alle columns an, baut einen Iterator und schmeisst den dann in globalIteration(iteration iter)**/
 		Iterator<Entry<Integer, Column>> columnIter = columns.entrySet().iterator();
 		globalIteration(columnIter);
@@ -42,15 +63,26 @@ public class Grid implements ImageConvertible {
 			if(columns.contains(i) && columns.contains(i+1)){
 				Column left = columns.get(i);
 				Column right = columns.get(i+1);
-				Hashtable<Integer, Double> dummy = left.getRight();				
-				left.setRight(right.getLeft());
-				right.setLeft(dummy);				
+				Hashtable<Integer, Double> dummyRight = left.getRight();	
+				Hashtable<Integer, Double> dummyLeft = right.getRight();				
+				left.setRight(dummyLeft);
+				right.setLeft(dummyRight);
+				
+				/**berechnet die outflow/inflow differenz zweier benachbarter spalten.**/
+				double epsilon = 0;
+				for (int j = 0; j<graph.height; j++){
+					double val = dummyRight.getOrDefault(j, 0.0) - dummyLeft.getOrDefault(j, 0.0);
+					epsilon = val*val + epsilon;
+				}
+				
+				converged = (epsilon <= (graph.epsilon/(graph.width-1))) && converged;
 			}
 		}//for schleife zu
 		
 		/**neue values der columns berechnen mit rekursiver Methode columnValueComputation(iterator)**/
 		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
 		columnValueComputation(columnIter2);
+		return converged;
 	}
 	
 	private void globalIteration(Iterator<Entry<Integer, Column>> iter) {
@@ -63,7 +95,6 @@ public class Grid implements ImageConvertible {
 			try {
 				current.join();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("globaliteration(iterator) kaputt");
 			}
@@ -107,7 +138,7 @@ public class Grid implements ImageConvertible {
 		Iterator<Integer> set = toMake.iterator();
 		while(set.hasNext()){
 			int c = set.next().intValue();
-			columns.put(c, new Column(graph, this, c));
+			columns.put(c, new Column(graph, this, c, true));
 		}
 		
 	}
@@ -118,7 +149,7 @@ public class Grid implements ImageConvertible {
 	
 	@Override
 	public double getValueAt(int column, int row) {
-		return columns.getOrDefault(column, new Column(graph, this, column)).getValue(row);
+		return (columns.contains(column)) ? columns.get(column).getValue(row): 0.0;
 	}
 	
 	public synchronized void setLocals(int i){
