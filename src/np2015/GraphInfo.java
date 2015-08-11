@@ -107,8 +107,8 @@ public class GraphInfo implements GuardedCommand {
 			    ) {
 				double[] command = commands.get(i);
 				final double rate = command[0]*x*y + command[1]*x + command[2]*y + command[3];
-				if(maxOutflow == 0.0)
-					return maxOutflow;/*return rate/maxOutflow; *///WHAT THE ACTUAL FUCK??????
+				if(maxOutflow != 0.0)
+					return rate/maxOutflow; 
 				else
 					return rate;				
 			}
