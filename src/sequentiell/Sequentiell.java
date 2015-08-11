@@ -14,7 +14,7 @@ public class Sequentiell {
 
 	public Sequentiell(GraphInfo graph){
 		this.grid = new Grid(graph);
-		grid.setLocals(1);
+		this.grid.setLocals(1);
 		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
 		
 		while(iter.hasNext()){
@@ -32,6 +32,11 @@ public class Sequentiell {
 		}//aeußere Schleife
 		
 		this.compute();
+	}
+	
+	public Sequentiell(Grid grid){
+		this.grid = grid;
+		this.grid.setLocals(1);
 	}
 		
 	/**Bisher wird hier nur über das Grid im ganzen iteriert, berechnet wird noch nix.**/
