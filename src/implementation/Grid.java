@@ -37,15 +37,32 @@ public class Grid implements ImageConvertible {
 		
 		
 	}
+	
 	public boolean serialComputation(){
 		
 		/**fuer eine rein sequentielle loesung**/
-		boolean converged = true;
-		addDummyColumns();
 		
+		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
+		while(spalten.hasNext())
+			spalten.next().getValue().run();
 		
+		addDummyColumns(); //bereitet alles fuer den exchange vor
 		
-		return converged;
+		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
+			if(columns.contains(i) && columns.contains(i+1))							
+				exchange(i);
+		}//for schleife zu
+		
+		spalten = columns.entrySet().iterator();
+		double sigma = 0.0;
+		while(spalten.hasNext()) //berechnet delta(inflow, outflow) jeder Spalte und bildet die Summe der quadrate.
+			sigma = sigma + spalten.next().getValue().serialSigma();		
+		
+		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
+		while(spalten.hasNext())
+			spalten.next().getValue().computeNewValues();
+		
+		return sigma < (graph.epsilon*graph.epsilon);
 	}
 	
 	public synchronized boolean globalIteration() {
@@ -61,21 +78,18 @@ public class Grid implements ImageConvertible {
 		/**tausche rechten outflow gegen linken outflow zweier benachbarter columns**/
 		for(int i = 0; i < graph.width-1; i++){
 			if(columns.contains(i) && columns.contains(i+1)){
-				Column left = columns.get(i);
-				Column right = columns.get(i+1);
-				Hashtable<Integer, Double> dummyRight = left.getRight();	
-				Hashtable<Integer, Double> dummyLeft = right.getRight();				
-				left.setRight(dummyLeft);
-				right.setLeft(dummyRight);
 				
 				/**berechnet die outflow/inflow differenz zweier benachbarter spalten.**/
 				double epsilon = 0;
 				for (int j = 0; j<graph.height; j++){
-					double val = dummyRight.getOrDefault(j, 0.0) - dummyLeft.getOrDefault(j, 0.0);
+					double val = columns.get(i).getRight().getOrDefault(j, 0.0) - columns.get(i+1).getLeft().getOrDefault(j, 0.0);
 					epsilon = val*val + epsilon;
 				}
 				
 				converged = (epsilon <= (graph.epsilon/(graph.width-1))) && converged;
+				
+				exchange(i);
+				
 			}
 		}//for schleife zu
 		
@@ -83,6 +97,14 @@ public class Grid implements ImageConvertible {
 		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
 		columnValueComputation(columnIter2);
 		return converged;
+	}
+	
+	private synchronized void exchange(int i){
+		Column left = columns.get(i);
+		Column right = columns.get(i+1);
+		Hashtable<Integer, Double> dummyRight = left.getRight();	
+		left.setRight(right.getLeft());
+		right.setLeft(dummyRight);
 	}
 	
 	private void globalIteration(Iterator<Entry<Integer, Column>> iter) {

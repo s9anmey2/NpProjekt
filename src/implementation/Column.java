@@ -135,7 +135,7 @@ public class Column extends Thread {
 			map.put(key, val);
 	}
 	
-	public double refreshAkku(){
+	public double serialSigma(){
 		/**fuer die sequentielle loesung wichtig. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow **/
 		double sigma=0.0;
 		for (int i=0; i<graph.height; i++){

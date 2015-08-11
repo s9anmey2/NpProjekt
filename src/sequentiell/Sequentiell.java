@@ -15,7 +15,7 @@ public class Sequentiell {
 	
 	public Sequentiell(Grid grid){
 		
-		/**der konstruktor ist fuer die nebenlauifge loesung, in der irgendwann uaf sequentielle berechnung gewechselt wird.**/
+		/**der konstruktor ist fuer die nebenlauefge loesung, in der irgendwann auf sequentielle berechnung gewechselt wird.**/
 		this.grid = grid;
 		this.grid.setLocals(1);
 	}
