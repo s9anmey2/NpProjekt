@@ -14,14 +14,11 @@ public class Sequentiell {
 	}
 	
 	public Sequentiell(Grid grid){
-		
 		/**der konstruktor ist fuer die nebenlauefge loesung, in der irgendwann auf sequentielle berechnung gewechselt wird.**/
 		this.grid = grid;
 		this.grid.setLocals(1);
 	}
-		
-	/**Bisher wird hier nur über das Grid im ganzen iteriert, berechnet wird noch nix.**/
-	
+			
 	public Grid compute(){
 		boolean converged = false;
 		while(!(converged)){

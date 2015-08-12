@@ -49,7 +49,7 @@ public class Grid implements ImageConvertible {
 		addDummyColumns(); //bereitet alles fuer den exchange vor
 		
 		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
-			if(columns.contains(i) && columns.contains(i+1))							
+			if(columns.containsKey(i) && columns.containsKey(i+1))							
 				exchange(i);
 		}//for schleife zu
 		
@@ -77,7 +77,7 @@ public class Grid implements ImageConvertible {
 		
 		/**tausche rechten outflow gegen linken outflow zweier benachbarter columns**/
 		for(int i = 0; i < graph.width-1; i++){
-			if(columns.contains(i) && columns.contains(i+1)){
+			if(columns.containsKey(i) && columns.containsKey(i+1)){
 				
 				/**berechnet die outflow/inflow differenz zweier benachbarter spalten.**/
 				double epsilon = 0;
@@ -171,7 +171,7 @@ public class Grid implements ImageConvertible {
 	
 	@Override
 	public double getValueAt(int column, int row) {
-		return (columns.contains(column)) ? columns.get(column).getValue(row): 0.0;
+		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
 	}
 	
 	public synchronized void setLocals(int i){

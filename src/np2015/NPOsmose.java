@@ -13,14 +13,16 @@ import com.google.gson.Gson;
 public class NPOsmose {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
+		
 	/*	Logger logger = new Logger();
 		logger.addSingleLine("halalalal", "whatever");
 		logger.print();*/
-	/**/Gson gson = new Gson();
+		
+		Gson gson = new Gson();
 		String json = "";
 		// read data in
 		if (args.length != 0) {
-			Path path = Paths.get(args[1]);
+			Path path = Paths.get(args[0]);
 			try {
 				json = new String(Files.readAllBytes(path)); 
 			} catch (IOException e) {
@@ -31,8 +33,8 @@ public class NPOsmose {
 		}
 		GraphInfo ginfo = gson.fromJson(json, GraphInfo.class);
 		// Your implementation can now access ginfo to read out all important values
-		ImageConvertible graph = new Sequentiell(ginfo).compute(); //new Grid(ginfo); <--- you should implement ImageConvertible to write the graph out
-		ginfo.write2File("./result.txt", graph);/**/
+		ImageConvertible graph = new Sequentiell(ginfo).compute(); // <--- you should implement ImageConvertible to write the graph out
+		ginfo.write2File("./result.txt", graph);
 	} 
 
 }

@@ -19,9 +19,9 @@ public class Column extends Thread {
 	
 	private Hashtable<Integer, Double> outLeft;			// geschützt durch explizites Lock, oder besser durch implizites, weil da jeder der das Objekt kennt Zugiff hat? TODO 
 	private Hashtable<Integer, Double> outRight;		// geschützt durch explizites Lock TODO 
-	Hashtable<Integer, Double> akku;
+	private Hashtable<Integer, Double> akku;
 
-	private double deleteFlag;							// kein Zugriff von außen, ferner liefen: ganz am schluss wenn noch zeit ist.-
+	//private double deleteFlag;							// kein Zugriff von außen, ferner liefen: ganz am schluss wenn noch zeit ist.-
 	private double sigma;								// kein Zugriff von außen, die summe der quadrate der akku werte
 	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
@@ -194,25 +194,3 @@ public class Column extends Thread {
 	}
 	
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
