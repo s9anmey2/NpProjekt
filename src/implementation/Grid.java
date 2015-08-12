@@ -60,7 +60,7 @@ public class Grid implements ImageConvertible {
 		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
 		while(spalten.hasNext())
 			spalten.next().getValue().computeNewValues();
-		System.out.println("sigma is: " +  sigma + "epsilon is " + eps);
+
 		return sigma < (eps);
 	}
 	
@@ -121,8 +121,16 @@ public class Grid implements ImageConvertible {
 		
 		/**das wird eine rekursive Methode, die startet solange threads wies welche gibt und wartet auf deren terminieren.**/
 		if(iter.hasNext()){
-			Column current = iter.next().getValue();
-			current.start();
+			Entry<Integer, Column> dummy = iter.next();
+	
+			Column current = dummy.getValue();
+			int key = dummy.getKey();
+			System.out.println("gestartet wird Key: " + key);
+			try{
+				current.start();
+			}catch(IllegalThreadStateException e){
+				System.out.println("kaputt bei Key: " + key);
+			}
 			globalIteration(iter);
 			try {
 				current.join();
@@ -181,8 +189,7 @@ public class Grid implements ImageConvertible {
 	
 	@Override
 	public double getValueAt(int column, int row) {
-		double val = (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
-		return val;
+		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
 	}
 	
 	public synchronized void setLocals(int i){
