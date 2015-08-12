@@ -39,7 +39,8 @@ public class Grid implements ImageConvertible {
 	public boolean serialComputation(){
 		
 		/**fuer eine rein sequentielle loesung**/
-		
+		double eps = graph.epsilon*graph.epsilon;
+
 		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
 		while(spalten.hasNext())
 			spalten.next().getValue().run();
@@ -59,8 +60,8 @@ public class Grid implements ImageConvertible {
 		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
 		while(spalten.hasNext())
 			spalten.next().getValue().computeNewValues();
-		
-		return sigma < (graph.epsilon*graph.epsilon);
+		System.out.println("sigma is: " +  sigma + "epsilon is " + eps);
+		return sigma < (eps);
 	}
 	
 	public synchronized boolean globalIteration() {

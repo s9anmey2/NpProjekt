@@ -24,7 +24,7 @@ public class Sequentiell {
 		int counter= 0;
 		while(!(converged)){
 			converged = grid.serialComputation();
-			System.out.println("sum at " + counter + " is " + grid.getSum());
+			//System.out.println("sum at " + counter + " is " + grid.getSum());
 			try{
 				assert(grid.getSum()==1.0);
 			}catch (Exception e){

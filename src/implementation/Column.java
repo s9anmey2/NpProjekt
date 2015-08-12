@@ -71,10 +71,10 @@ public class Column extends Thread {
 				
 				/**value wird jetzt mit den outflow rate verrechnet, dabei muss **/
 				
-				outflowLeft = val * graph.getRateForTarget(currentPos, me, Neighbor.Left);
-				outflowRight= val * graph.getRateForTarget(currentPos, me, Neighbor.Right);
-				outFlowTop  = val * graph.getRateForTarget(currentPos, me, Neighbor.Top);
-				outFlowDown = val * graph.getRateForTarget(currentPos, me, Neighbor.Bottom);
+				outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
+				outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
+				outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
+				outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
 				
 				/**die summe des outflows wird jetzt vom akku der aktuellen position abgezogen und gesetzt.**/
 				
@@ -89,15 +89,18 @@ public class Column extends Thread {
 
 				if(currentPos > 0)	//if fuer randfall 0	
 					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
-			
+				
 				if(currentPos < graph.height-1)//if fuer randfall max
 					addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
-				
+				else if(outFlowDown>0.0)
+					System.out.println("Hier läuft es raus top: " +  outFlowDown + "at position " + currentPos);
+					
 				if(me>0) //if fuer randfall, spalte = 0
 					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);
-					
+				
 				if(me<graph.width-1)
 					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
+				
 			
 			}//while schleife zu
 			
