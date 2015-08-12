@@ -77,15 +77,15 @@ public class Column extends Thread {
 				
 				/**value wird jetzt mit den outflow rate verrechnet, dabei muss **/
 				
-				outflowLeft = graph.getRateForTarget(currentPos, me, Neighbor.Left);
-				outflowRight= graph.getRateForTarget(currentPos, me, Neighbor.Right);
-				outFlowTop  = graph.getRateForTarget(currentPos, me, Neighbor.Top);
-				outFlowDown = graph.getRateForTarget(currentPos, me, Neighbor.Bottom);
+				outflowLeft = val * graph.getRateForTarget(currentPos, me, Neighbor.Left);
+				outflowRight= val * graph.getRateForTarget(currentPos, me, Neighbor.Right);
+				outFlowTop  = val * graph.getRateForTarget(currentPos, me, Neighbor.Top);
+				outFlowDown = val * graph.getRateForTarget(currentPos, me, Neighbor.Bottom);
 				
 				/**die summe des outflows wird jetzt vom akku der aktuellen position abgezogen und gesetzt.**/
 				
 				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-				
+								
 				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 			
@@ -123,18 +123,6 @@ public class Column extends Thread {
 			
 	}
 	
-	
-	
-	
-	private synchronized void addOrReplaceEntry(Hashtable<Integer, Double> map, int key, double val){
-		
-		/**aktualisiert oder ergaenzt eintraege in hashtables**/
-		if(map.containsKey(key))
-			map.replace(key, val);
-		else
-			map.put(key, val);
-	}
-	
 	public double serialSigma(){
 		/**fuer die sequentielle loesung wichtig. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow **/
 		double sigma=0.0;
@@ -155,7 +143,7 @@ public class Column extends Thread {
 				int pos = dummy.getKey();
 				double val = dummy.getValue();
 				addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);			
-			}//while zu+
+			}//while zu
 			
 		}if(me<graph.width){
 			Iterator<Entry<Integer, Double>> right= outRight.entrySet().iterator();
@@ -169,8 +157,13 @@ public class Column extends Thread {
 
 	}
 	
-	public void setValue(int pos, double val){
-		values.put(pos, val);
+	private synchronized void addOrReplaceEntry(Hashtable<Integer, Double> map, int key, double val){
+		
+		/**aktualisiert oder ergaenzt eintraege in hashtables**/
+		if(map.containsKey(key))
+			map.replace(key, val);
+		else
+			map.put(key, val);
 	}
 	
 	public synchronized Hashtable<Integer, Double> getLeft(){
