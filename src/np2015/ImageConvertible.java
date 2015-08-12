@@ -1,4 +1,4 @@
-package np2015;
+package src.np2015;
 
 public interface ImageConvertible {
 	/**

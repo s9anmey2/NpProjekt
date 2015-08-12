@@ -1,17 +1,11 @@
-package implementation;
+package src.implementation;
 
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
-
-
-
-
-
-
-import np2015.GraphInfo;
-import np2015.Neighbor;
+import src.np2015.GraphInfo;
+import src.np2015.Neighbor;
 
 public class Column extends Thread {
 	
@@ -93,16 +87,16 @@ public class Column extends Thread {
 				 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
 				 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/
 
-				if(currentPos != 0)	//if fuer randfall 0	
+				if(currentPos > 0)	//if fuer randfall 0	
 					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
 			
-				if(currentPos != graph.height)//if fuer randfall max
+				if(currentPos < graph.height-1)//if fuer randfall max
 					addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
 				
 				if(me>0) //if fuer randfall, spalte = 0
 					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);
 					
-				if(me<graph.width)
+				if(me<graph.width-1)
 					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
 			
 			}//while schleife zu
@@ -121,6 +115,14 @@ public class Column extends Thread {
 				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 		}//for schleife zu
 			
+	}
+	
+	public double getSum(){
+		double ret= 0.0;
+		Iterator<Entry<Integer,Double>> row = values.entrySet().iterator();
+		while(row.hasNext())
+			ret = ret + row.next().getValue();
+		return ret;
 	}
 	
 	public double serialSigma(){

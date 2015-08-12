@@ -1,4 +1,4 @@
-package np2015;
+package src.np2015;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

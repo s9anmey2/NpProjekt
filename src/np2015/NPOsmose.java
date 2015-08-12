@@ -1,11 +1,11 @@
-package np2015;
+package src.np2015;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sequentiell.*;
+import src.sequentiell.*;
 //import utility.Logger;
 
 import com.google.gson.Gson;

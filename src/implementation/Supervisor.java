@@ -1,6 +1,6 @@
-package implementation;
+package src.implementation;
 
-import np2015.GraphInfo;
+import src.np2015.GraphInfo;
 
 public class Supervisor {
 	

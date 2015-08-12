@@ -1,7 +1,5 @@
-/**
- * 
- */
-package implementation;
+
+package src.implementation;
 
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -9,8 +7,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
-import np2015.GraphInfo;
-import np2015.ImageConvertible;
+import src.np2015.GraphInfo;
+import src.np2015.ImageConvertible;
 
 public class Grid implements ImageConvertible {
 
@@ -96,9 +94,20 @@ public class Grid implements ImageConvertible {
 		/**neue values der columns berechnen mit rekursiver Methode columnValueComputation(iterator)**/
 		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
 		columnValueComputation(columnIter2);
+		
+		
+		
 		return converged;
 	}
 	
+	public double getSum(){
+		Iterator<Entry<Integer, Column>> col = columns.entrySet().iterator();
+		double ret = 0.0;
+		while(col.hasNext())
+			ret = ret + col.next().getValue().getSum();
+		return ret;
+	}
+
 	private synchronized void exchange(int i){
 		Column left = columns.get(i);
 		Column right = columns.get(i+1);
@@ -150,7 +159,7 @@ public class Grid implements ImageConvertible {
 			Entry<Integer, Column> dummy = iter.next();
 			int key = dummy.getKey();
 			
-			if(!(columns.containsKey(key+1)) && key<graph.width)
+			if(!(columns.containsKey(key+1)) && key<graph.width-1)
 				toMake.add(key +1);
 			if(!(columns.containsKey(key-1)) && key>0)
 				toMake.add(key -1);		
@@ -171,7 +180,8 @@ public class Grid implements ImageConvertible {
 	
 	@Override
 	public double getValueAt(int column, int row) {
-		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
+		double val = (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
+		return val;
 	}
 	
 	public synchronized void setLocals(int i){

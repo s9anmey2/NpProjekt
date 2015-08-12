@@ -5,3 +5,5 @@
 /bin/
 .classpath
 *.log.*
+result.txt
+.settings/org.eclipse.jdt.core.prefs
