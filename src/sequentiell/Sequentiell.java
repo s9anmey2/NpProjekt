@@ -1,39 +1,56 @@
 package sequentiell;
 
-
 import np2015.GraphInfo;
 
 import implementation.Grid;
 
+/**
+ * Diese Klasse organisiert die sequentielle Ausführung eines Osmose Prozesses.
+ */
 public class Sequentiell {
+
+	/**
+	 * Gitter auf dem gearbeitet wird.
+	 */
 	private Grid grid;
 
-	public Sequentiell(GraphInfo graph){	
+	/**
+	 * Der Konstruktor erzeugt mit dem übergegebenen GraphInfo Objekt ein neues
+	 * Gitter.
+	 * 
+	 * @param graph
+	 */
+	public Sequentiell(GraphInfo graph) {
 		this.grid = new Grid(graph);
 		this.grid.setLocals(1);
 	}
-	
-	public Sequentiell(Grid grid){
-		/**der konstruktor ist fuer die nebenlauefge loesung, in der irgendwann auf sequentielle berechnung gewechselt wird.**/
+
+	/**
+	 * Der Konstruktor nimmt ein Grid entgegen, damit auf einem nicht initialen
+	 * Grid weiter gerechnet werden kann.
+	 * 
+	 * @param grid
+	 */
+	public Sequentiell(Grid grid) {
 		this.grid = grid;
 		this.grid.setLocals(1);
 	}
-			
-	public Grid compute(){
-		boolean converged = false;
-		int counter= 0;
-		while(!(converged)){
-			converged = grid.serialComputation();
-			//System.out.println("sum at " + counter + " is " + grid.getSum());
-			try{
-				assert(grid.getSum()==1.0);
-			}catch (Exception e){
-				System.out.println("assert failed bei : " + counter);
-			}
-			counter++;
+
+	/**
+	 * Berechnet sequentiell einen Osmoseprozess eines Gitters bis zur
+	 * Konvergenz.
+	 * 
+	 * @return Grid
+	 */
+	public synchronized Grid compute() {
+
+		boolean converted = false;
+
+		while (!(converted)) {
+			converted = grid.serialComputation();
 		}
+
 		return grid;
 	}
-	
-	
+
 }
