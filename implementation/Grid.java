@@ -22,13 +22,26 @@ public class Grid implements ImageConvertible {
 	private ExecutorService exe;
 	private volatile int localIterations; /**Der supervisor gibt dem grid die anzahl der localen schritte, damit sich die co,lumns diese dort abholen koennen.
 	Dazu gibt das Grid dann eine referenz auf sich selbst an die columns mit**/
-	
 	/**wird mit dem aktuellen GraphInfo Objekt initialisiert und reicht dieses nach unten an die Columns weiter.**/
 	
-	public Grid(GraphInfo graph, ExecutorService exe){
+	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();
+		
+		/**der konstruktor baut die spalten.**/
+		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
+		
+		while(iter.hasNext()){
+			Entry<Integer, HashMap<Integer, Double>> forGrid = iter.next();
+			Column column = new Column(graph, this, forGrid.getKey(), false);		
+			columns.put(forGrid.getKey(), column);
+		}//aeußere Schleife	
+	}
+	
+	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
 		this.exe = exe;
+		this.graph = graph;
+		this.columns = new Hashtable<Integer, Column>();
 		
 		/**der konstruktor baut die spalten.**/
 		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();

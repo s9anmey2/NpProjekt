@@ -45,7 +45,8 @@ public class Column implements Callable<Double>{
 	private final double crit;
 
 	public Column(GraphInfo graph, Grid grid, int y, boolean isDummy) {
-		
+		System.out.println("column " + y);
+
 		/**aufgerufen von grid "echte" spalte.**/
 		double square;
 		this.graph = graph;
