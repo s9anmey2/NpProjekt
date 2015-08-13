@@ -14,7 +14,7 @@ import np2015.Neighbor;
  * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
  * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
  */
-public class Column implements Callable<Double>{
+public class Column implements Callable<Boolean>{
 	
 	/**
 	 * values enthält die aktuellen Werte der Spalte.
@@ -44,9 +44,10 @@ public class Column implements Callable<Double>{
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	private int me;
 	private final double crit;
-	private Exchanger left, right;
-
-	public Column(GraphInfo graph, Grid grid, int y, Exchanger left, Exchanger right) {
+	private Exchanger<Hashtable<Integer,Double>> left, right;
+	private final double epsilon;
+	
+	public Column(GraphInfo graph, Grid grid, int y, Exchanger<Hashtable<Integer,Double>> left, Exchanger<Hashtable<Integer, Double>> right) {
 		System.out.println("column " + y);
 
 		/**aufgerufen von grid "echte" spalte.**/
@@ -62,6 +63,7 @@ public class Column implements Callable<Double>{
 		this.crit = square*square;
 		this.left = left;
 		this.right = right;
+		this.epsilon = (graph.epsilon/(graph.width-1))*(graph.epsilon/(graph.width-1));
 		
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -77,82 +79,114 @@ public class Column implements Callable<Double>{
 
 	
 	@Override
-	public synchronized Double call() {
+	public synchronized Boolean call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
+		boolean ret;
 		
-		if(values.size()==0){
-		/*	exchangerLeft.exchange(outRight);
-			exchangerRight.exchange(outLeft);
-		*/	return 0.0;
-		}else{
+		if(values.size()!=0)
+			localIteration();
+		Hashtable<Integer, Double> leftAccu = outLeft;
+		exchange();
+			
+			if(me>0){
+				double delta = 0.0;
+				
+				for (int j = 0; j<graph.height; j++){
+					double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
+					delta= val*val + delta;
+				}	
+				ret = delta<=epsilon;
+				
+			}else
+				ret = true;
+			computeNewValues();
+			return ret;
 		
-			outLeft = new Hashtable<>();
-			outRight= new Hashtable<>();
-			int localIterations = grid.getLocals();
-			for (int i=0; i<localIterations; i++){
-				akku = new Hashtable<>();
-				sigma = 0.0;
-				Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
-				while(knoten.hasNext()){
-					/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
-					
-					Entry<Integer, Double> dummy= knoten.next();
-					double outflowLeft = 0.0,outflowRight = 0.0, outFlowTop = 0.0, outFlowDown = 0.0; //outflowTop (von n nach n-1) outFlowDown (von n nach n+1)
-					double val = dummy.getValue();
-					int currentPos = dummy.getKey();
-					
-					
-					/**die akkus von vorgaenger und nachfolger muessen geaendert werden. Zwei Faelle: *sessor gibt es noch nicht -> machen und mit outflowtop/bottom 
-					 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
-					 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/				
-				
-					if(me>0){ //if fuer randfall, spalte = 0
-						outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
-						addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
-					}
-					
-					if(me<graph.width-1){
-						outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
-						addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
-					}
-					
-					if(currentPos > 0){	//if fuer randfall 0	
-						outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
-						addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
-					}
+	}
 	
-					if(currentPos < graph.height-1){//if fuer randfall max
-						outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
-						addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
-					}
-					
-					/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
-					val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-									
-					/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
-					addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
-	
-				}//while schleife zu
-				
-				/*if(me > 0)
-					left.exchange vblabla*/
-				
-				
-				/**hier werden alle eintraege mit denen des akkus verechnet.**/
-				Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
-				while(acc.hasNext()){
-					Entry<Integer, Double> dummy = acc.next();
-					int pos = dummy.getKey();
-					double val = dummy.getValue();
-					sigma = sigma + val*val;
-					addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
-				}//while schleife zu
-				
-				if(sigma <= crit)
-					break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-			}//for schleife zu
-			return 0.0;
+	private void exchange(){
+		try {
+			if(me % 2 == 0){ //grade erst nach links tauschen, ungerade erst nach rechts.
+				if(me > 0)
+					left.exchange(outLeft);
+				if(me<graph.width-1)
+					right.exchange(outRight);
+			}else{
+				if(me<graph.width-1)
+					right.exchange(outRight);
+				if(me > 0)
+					left.exchange(outLeft);
+			}
+		} catch (InterruptedException e) {
+				System.out.println("Exchange failed :/");
+				e.printStackTrace();
 		}
+	}
+	
+	public void localIteration(){
+		
+		outLeft = new Hashtable<>();
+		outRight= new Hashtable<>();
+		int localIterations = grid.getLocals();
+		for (int i=0; i<localIterations; i++){
+			akku = new Hashtable<>();
+			sigma = 0.0;
+			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
+			while(knoten.hasNext()){
+				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
+				
+				Entry<Integer, Double> dummy= knoten.next();
+				double outflowLeft = 0.0,outflowRight = 0.0, outFlowTop = 0.0, outFlowDown = 0.0; //outflowTop (von n nach n-1) outFlowDown (von n nach n+1)
+				double val = dummy.getValue();
+				int currentPos = dummy.getKey();
+				
+				
+				/**die akkus von vorgaenger und nachfolger muessen geaendert werden. Zwei Faelle: *sessor gibt es noch nicht -> machen und mit outflowtop/bottom 
+				 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
+				 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/				
+			
+				if(me>0){ //if fuer randfall, spalte = 0
+					outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
+					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
+				}
+				
+				if(me<graph.width-1){
+					outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
+					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
+				}
+				
+				if(currentPos > 0){	//if fuer randfall 0	
+					outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
+					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
+				}
+
+				if(currentPos < graph.height-1){//if fuer randfall max
+					outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
+					addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
+				}
+				
+				/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
+				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
+								
+				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
+				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
+
+			}//while schleife zu
+			
+			
+			/**hier werden alle eintraege mit denen des akkus verechnet.**/
+			Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
+			while(acc.hasNext()){
+				Entry<Integer, Double> dummy = acc.next();
+				int pos = dummy.getKey();
+				double val = dummy.getValue();
+				sigma = sigma + val*val;
+				addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
+			}//while schleife zu
+			
+			if(sigma <= crit)
+				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+		}//for schleife zu
 	}
 	
 	public double getSum(){

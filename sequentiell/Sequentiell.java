@@ -43,10 +43,10 @@ public class Sequentiell {
 	 */
 	public synchronized Grid compute() {
 
-		boolean converted = false;
+		boolean converged = false;
 
-		while (!(converted)) {
-			converted = grid.serialComputation();
+		while (!(converged)) {
+			converged = grid.serialComputation();
 		}
 
 		return grid;

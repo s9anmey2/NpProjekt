@@ -49,10 +49,8 @@ public class Grid implements ImageConvertible {
 
 		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
 		while(spalten.hasNext())
-			spalten.next().getValue().call();
-		/**
-		if(columns.size() < graph.width)
-			addDummyColumns(); **///bereitet alles fuer den exchange vor
+			spalten.next().getValue().localIteration();
+
 		
 		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
 			if(columns.containsKey(i) && columns.containsKey(i+1))							
@@ -77,41 +75,13 @@ public class Grid implements ImageConvertible {
 		/**hier jetzt den executor hin**/
 		try{
 			Collection<Column> tasks = columns.values();
-			List<Future<Double>> rets =  exe.invokeAll(tasks);
-			for(Future<Double> col: rets)
-				col.get();
+			List<Future<Boolean>> rets =  exe.invokeAll(tasks);
+			for(Future<Boolean> col: rets)
+				converged = converged && col.get();
 		}catch (Exception e){
 			System.out.println(":/");
 			return true;
-		}
-		
-		
-		/**passe die gridstruktur fuer die arbeit des exchangers an: fuege dummy spalten hinzu
-		if(columns.size() < graph.width)
-			addDummyColumns();**/
-		
-		/**tausche rechten outflow gegen linken outflow zweier benachbarter columns**/
-		for(int i = 0; i < graph.width-1; i++){
-			if(columns.containsKey(i) && columns.containsKey(i+1)){
-				
-				/**berechnet die outflow/inflow differenz zweier benachbarter spalten.**/
-				double epsilon = 0;
-				for (int j = 0; j<graph.height; j++){
-					double val = columns.get(i).getRight().getOrDefault(j, 0.0) - columns.get(i+1).getLeft().getOrDefault(j, 0.0);
-					epsilon = val*val + epsilon;
-				}
-				
-				converged = (epsilon <= (graph.epsilon/(graph.width-1))) && converged;
-				
-				exchange(i);			
-			}
-		}//for schleife zu
-		
-		/**neue values der columns berechnen mit rekursiver Methode columnValueComputation(iterator)**/
-		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
-		columnValueComputation(columnIter2);
-
-		
+		}		
 		return converged;
 	}
 	
@@ -131,47 +101,6 @@ public class Grid implements ImageConvertible {
 		right.setLeft(dummyRight);
 	}
 
-	private void columnValueComputation(Iterator<Entry<Integer,Column>> iter) {
-		
-		/**benutzt den Wrapper nodeeval um nebenläufig die neuen column eintraege zu berechnen.**/
-		if(iter.hasNext()){
-			NodeEval eval = new NodeEval(iter.next().getValue());
-			eval.start();
-			columnValueComputation(iter);
-			try {
-				eval.join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.out.println("columnValueComputation kaputt.");
-			}
-		}
-	}
-
-/**	public synchronized void addDummyColumns() {
-		
-		
-		TreeSet<Integer> toMake = new TreeSet<>();
-		Iterator<Entry<Integer, Column>> iter = columns.entrySet().iterator();
-		while(iter.hasNext()){
-			Entry<Integer, Column> dummy = iter.next();
-			int key = dummy.getKey();
-			
-			if(!(columns.containsKey(key+1)) && key<graph.width-1)
-				toMake.add(key +1);
-			if(!(columns.containsKey(key-1)) && key>0)
-				toMake.add(key -1);		
-		}//Ende while schleife
-		
-		
-		Iterator<Integer> set = toMake.iterator();
-		while(set.hasNext()){
-			int c = set.next().intValue();
-			columns.put(c, new Column(graph, this, c, true));
-		}
-		
-	}**/
-	
 	private void makeColumns(){
 		Exchanger<Hashtable<Integer,Double>> left, right;
 		left = null;
