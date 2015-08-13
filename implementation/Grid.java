@@ -71,7 +71,6 @@ public class Grid implements ImageConvertible {
 	
 	public synchronized boolean globalIteration() {
 		boolean converged = true;
-
 		/**hier jetzt den executor hin**/
 		try{
 			Collection<Column> tasks = columns.values();

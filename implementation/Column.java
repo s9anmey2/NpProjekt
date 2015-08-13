@@ -32,22 +32,21 @@ public class Column implements Callable<Boolean>{
 	 * jeden lokalen Iterationsschritts geleert.
 	 */
 	private Hashtable<Integer, Double> akku;
-
-	//private double deleteFlag; // TODO ferner liefen: ganz am schluss wenn noch zeit ist.-
 	
 	/**
 	 * sigma enthält am Ende der lokalen Iteration die Quadrate der Akkuwerte
 	 * und dient der Verhinderung unnötig vieler lokaler Iterationen.
 	 */
 	private double sigma;
-	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
+	private GraphInfo graph;		
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	private int me;
 	private Exchanger<Hashtable<Integer,Double>> left, right;
 	private final double epsilon;
+	private double[][] rates;
+	
 	
 	public Column(GraphInfo graph, Grid grid, int y, Exchanger<Hashtable<Integer,Double>> left, Exchanger<Hashtable<Integer, Double>> right) {
-		System.out.println("column " + y);
 
 		/**aufgerufen von grid "echte" spalte.**/
 		this.graph = graph;
@@ -60,6 +59,14 @@ public class Column implements Callable<Boolean>{
 		this.left = left;
 		this.right = right;
 		this.epsilon = (graph.epsilon*graph.epsilon)/graph.width;
+		this.rates = new double[graph.height][4];
+		
+		for(int i=0; i<graph.height; i++){
+			this.rates[i][0] = graph.getRateForTarget(me, i, Neighbor.Left); //0=left
+			this.rates[i][1] = graph.getRateForTarget(me, i, Neighbor.Top);//1=Top
+			this.rates[i][2] = graph.getRateForTarget(me, i, Neighbor.Right);//2=Right
+			this.rates[i][3] = graph.getRateForTarget(me, i, Neighbor.Bottom);//4=Bottom
+		}
 		
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -81,6 +88,7 @@ public class Column implements Callable<Boolean>{
 		
 		if(values.size()!=0)
 			localIteration();
+		
 		Hashtable<Integer, Double> leftAccu = outLeft;
 		exchange();
 			
@@ -88,9 +96,13 @@ public class Column implements Callable<Boolean>{
 				double delta = 0.0;
 				
 				for (int j = 0; j<graph.height; j++){
+					//double a = leftAccu.getOrDefault(j, 0.0);
+					//double b = outLeft.getOrDefault(j, 0.0);
+					//System.out.println(a+ "minus" +b);
 					double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
 					delta= val*val + delta;
-				}	
+				}
+				System.out.println("delta: " + delta + "  						 epsilon: " + epsilon);
 				ret = delta<=epsilon;
 				
 			}else
@@ -104,14 +116,16 @@ public class Column implements Callable<Boolean>{
 		try {
 			if(me % 2 == 0){ //grade erst nach links tauschen, ungerade erst nach rechts.
 				if(me > 0)
-					left.exchange(outLeft);
+					outLeft = left.exchange(outLeft);
+				
 				if(me<graph.width-1)
-					right.exchange(outRight);
+					outRight = right.exchange(outRight);
 			}else{
 				if(me<graph.width-1)
-					right.exchange(outRight);
+					outRight = right.exchange(outRight);
+				
 				if(me > 0)
-					left.exchange(outLeft);
+					outLeft = left.exchange(outLeft);
 			}
 		} catch (InterruptedException e) {
 				System.out.println("Exchange failed :/");
@@ -141,29 +155,29 @@ public class Column implements Callable<Boolean>{
 				 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
 				 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/				
 			
-				if(me>0){ //if fuer randfall, spalte = 0
-					outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
+				if(rates[currentPos][0] != 0.0){ //if fuer randfall, spalte = 0
+					outflowLeft = val * rates[currentPos][0];
 					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
 				}
 				
-				if(me<graph.width-1){
-					outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
+				if(rates[currentPos][2] != 0.0){
+					outflowRight= val * rates[currentPos][2];
 					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
 				}
 				
-				if(currentPos > 0){	//if fuer randfall 0	
-					outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
+				if(rates[currentPos][1] != 0.0){	//if fuer randfall 0	
+					outFlowTop  =  val * rates[currentPos][1];
 					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
 				}
 
-				if(currentPos < graph.height-1){//if fuer randfall max
-					outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
+				if(rates[currentPos][3] != 0.0){//if fuer randfall max
+					outFlowDown = val * rates[currentPos][3];
 					addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
 				}
 				
 				/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
 				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-								
+	
 				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 

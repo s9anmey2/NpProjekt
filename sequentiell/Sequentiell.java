@@ -42,7 +42,7 @@ public class Sequentiell {
 	 * @return Grid
 	 */
 	public synchronized Grid compute() {
-
+		System.out.println("Sequentiell.");
 		boolean converged = false;
 
 		while (!(converged)) {
