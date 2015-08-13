@@ -43,7 +43,6 @@ public class Column implements Callable<Boolean>{
 	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	private int me;
-	private final double crit;
 	private Exchanger<Hashtable<Integer,Double>> left, right;
 	private final double epsilon;
 	
@@ -51,7 +50,6 @@ public class Column implements Callable<Boolean>{
 		System.out.println("column " + y);
 
 		/**aufgerufen von grid "echte" spalte.**/
-		double square;
 		this.graph = graph;
 		this.grid = grid;
 		this.values = new Hashtable<>();
@@ -59,11 +57,9 @@ public class Column implements Callable<Boolean>{
 		this.outLeft = new Hashtable<>();
 		this.akku = new Hashtable<>();
 		this.me = y; //y ist die spaltennummer
-		square = graph.epsilon/graph.width;
-		this.crit = square*square;
 		this.left = left;
 		this.right = right;
-		this.epsilon = (graph.epsilon/(graph.width-1))*(graph.epsilon/(graph.width-1));
+		this.epsilon = (graph.epsilon*graph.epsilon)/graph.width;
 		
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -184,7 +180,7 @@ public class Column implements Callable<Boolean>{
 				addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
 			}//while schleife zu
 			
-			if(sigma <= crit)
+			if(sigma <= epsilon)
 				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 		}//for schleife zu
 	}
