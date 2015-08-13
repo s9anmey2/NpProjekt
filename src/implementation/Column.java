@@ -7,16 +7,36 @@ import java.util.Map.Entry;
 import np2015.GraphInfo;
 import np2015.Neighbor;
 
+/**
+ * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
+ * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
+ */
 public class Column extends Thread {
 	
-	private Hashtable<Integer, Double> values;			// kein Zugriff von außen
-	
-	private Hashtable<Integer, Double> outLeft;			// geschützt durch explizites Lock, oder besser durch implizites, weil da jeder der das Objekt kennt Zugiff hat? TODO 
-	private Hashtable<Integer, Double> outRight;		// geschützt durch explizites Lock TODO 
+	/**
+	 * values enthält die aktuellen Werte der Spalte.
+	 */
+	private Hashtable<Integer, Double> values;
+	/**
+	 * outLeft und outRight enthalten die Werte, die nach den lokalen
+	 * Iterationsschritten an die Nachbarspalten abgegeben werden und 
+	 * werden zu Beginn eines globalen Iterationsschritts geleert.
+	 */
+	private Hashtable<Integer, Double> outLeft;	
+	private Hashtable<Integer, Double> outRight;
+	/**
+	 * akku enthält die Werde des vertikalen Flows und wird zu Beginn 
+	 * jeden lokalen Iterationsschritts geleert.
+	 */
 	private Hashtable<Integer, Double> akku;
 
-	//private double deleteFlag;							// kein Zugriff von außen, ferner liefen: ganz am schluss wenn noch zeit ist.-
-	private double sigma;								// kein Zugriff von außen, die summe der quadrate der akku werte
+	//private double deleteFlag; // TODO ferner liefen: ganz am schluss wenn noch zeit ist.-
+	
+	/**
+	 * sigma enthält am Ende der lokalen Iteration die Quadrate der Akkuwerte
+	 * und dient der Verhinderung unnötig vieler lokaler Iterationen.
+	 */
+	private double sigma;
 	private GraphInfo graph;		//graph.getRateForTarget(x,y,<Neighbor>) Neighbor:={Left, Right, Top, Bottom}
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	private int me;
