@@ -1,11 +1,16 @@
 
 package implementation;
 
+import java.util.List;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import np2015.GraphInfo;
 import np2015.ImageConvertible;
@@ -14,6 +19,7 @@ public class Grid implements ImageConvertible {
 
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
+	private ExecutorService exe;
 	private volatile int localIterations; /**Der supervisor gibt dem grid die anzahl der localen schritte, damit sich die co,lumns diese dort abholen koennen.
 	Dazu gibt das Grid dann eine referenz auf sich selbst an die columns mit**/
 	
@@ -22,6 +28,7 @@ public class Grid implements ImageConvertible {
 	public Grid(GraphInfo graph){
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();
+		this.exe = Executors.newFixedThreadPool(graph.width);//new ThreadPoolExecutor(graph.width)
 		
 		/**der konstruktor baut die spalten.**/
 		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
@@ -43,7 +50,7 @@ public class Grid implements ImageConvertible {
 
 		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
 		while(spalten.hasNext())
-			spalten.next().getValue().run();
+			spalten.next().getValue().call();
 		
 		addDummyColumns(); //bereitet alles fuer den exchange vor
 		
@@ -67,9 +74,17 @@ public class Grid implements ImageConvertible {
 	public synchronized boolean globalIteration() {
 		boolean converged = true;
 
-		/**global iteration legt alle columns an, baut einen Iterator und schmeisst den dann in globalIteration(iteration iter)**/
-		Iterator<Entry<Integer, Column>> columnIter = columns.entrySet().iterator();
-		globalIteration(columnIter);
+		/**hier jetzt den executor hin**/
+		try{
+			Collection<Column> tasks = columns.values();
+			List<Future<Double>> rets =  exe.invokeAll(tasks);
+			for(Future<Double> col: rets)
+				col.get();
+		}catch (Exception e){
+			System.out.println(":/");
+			return true;
+		}
+		
 		
 		/**passe die gridstruktur fuer die arbeit des exchangers an: fuege dummy spalten hinzu**/
 		addDummyColumns();
@@ -87,16 +102,14 @@ public class Grid implements ImageConvertible {
 				
 				converged = (epsilon <= (graph.epsilon/(graph.width-1))) && converged;
 				
-				exchange(i);
-				
+				exchange(i);			
 			}
 		}//for schleife zu
 		
 		/**neue values der columns berechnen mit rekursiver Methode columnValueComputation(iterator)**/
 		Iterator<Entry<Integer, Column>> columnIter2 = columns.entrySet().iterator();
 		columnValueComputation(columnIter2);
-		
-		
+
 		
 		return converged;
 	}
@@ -115,30 +128,6 @@ public class Grid implements ImageConvertible {
 		Hashtable<Integer, Double> dummyRight = left.getRight();	
 		left.setRight(right.getLeft());
 		right.setLeft(dummyRight);
-	}
-	
-	private void globalIteration(Iterator<Entry<Integer, Column>> iter) {
-		
-		/**das wird eine rekursive Methode, die startet solange threads wies welche gibt und wartet auf deren terminieren.**/
-		if(iter.hasNext()){
-			Entry<Integer, Column> dummy = iter.next();
-	
-			Column current = dummy.getValue();
-			int key = dummy.getKey();
-			System.out.println("gestartet wird Key: " + key);
-			try{
-				current.start();
-			}catch(IllegalThreadStateException e){
-				System.out.println("kaputt bei Key: " + key);
-			}
-			globalIteration(iter);
-			try {
-				current.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				System.out.println("globaliteration(iterator) kaputt");
-			}
-		}
 	}
 
 	private void columnValueComputation(Iterator<Entry<Integer,Column>> iter) {

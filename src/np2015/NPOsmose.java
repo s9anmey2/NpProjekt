@@ -35,6 +35,7 @@ public class NPOsmose {
 		// Your implementation can now access ginfo to read out all important values
 		ImageConvertible graph = new Supervisor(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
 		ginfo.write2File("./result.txt", graph);
+		System.out.println("Done.");
 	} 
-
+	
 }

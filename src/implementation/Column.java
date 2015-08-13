@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+
 import np2015.GraphInfo;
 import np2015.Neighbor;
 
@@ -11,7 +13,7 @@ import np2015.Neighbor;
  * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
  * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
  */
-public class Column extends Thread {
+public class Column implements Callable<Double>{
 	
 	/**
 	 * values enthält die aktuellen Werte der Spalte.
@@ -71,7 +73,7 @@ public class Column extends Thread {
 
 	
 	@Override
-	public synchronized void run() {
+	public synchronized Double call() {
 		
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
 		outLeft = new Hashtable<>();
@@ -137,7 +139,7 @@ public class Column extends Thread {
 			if(sigma <= crit)
 				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 		}//for schleife zu
-			
+		return 0.0;
 	}
 	
 	public double getSum(){

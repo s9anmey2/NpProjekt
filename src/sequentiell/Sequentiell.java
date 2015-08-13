@@ -1,8 +1,8 @@
-package sequentiell;
+package src.sequentiell;
 
-import np2015.GraphInfo;
+import src.np2015.GraphInfo;
 
-import implementation.Grid;
+import src.implementation.Grid;
 
 /**
  * Diese Klasse organisiert die sequentielle Ausführung eines Osmose Prozesses.
