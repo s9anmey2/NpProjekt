@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Exchanger;
 
 import np2015.GraphInfo;
 import np2015.Neighbor;
@@ -43,8 +44,9 @@ public class Column implements Callable<Double>{
 	private Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	private int me;
 	private final double crit;
+	private Exchanger left, right;
 
-	public Column(GraphInfo graph, Grid grid, int y, boolean isDummy) {
+	public Column(GraphInfo graph, Grid grid, int y, Exchanger left, Exchanger right) {
 		System.out.println("column " + y);
 
 		/**aufgerufen von grid "echte" spalte.**/
@@ -58,17 +60,18 @@ public class Column implements Callable<Double>{
 		this.me = y; //y ist die spaltennummer
 		square = graph.epsilon/graph.width;
 		this.crit = square*square;
+		this.left = left;
+		this.right = right;
 		
-		if(!(isDummy)){
-			HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
-			Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
+		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
+		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
 			
-			while(iter.hasNext()){
-				Entry<Integer,Double> dummy = iter.next();
-				int row = dummy.getKey();
-				double val = dummy.getValue();
-				values.put(row, val);			
-			}
+		while(iter.hasNext()){
+			Entry<Integer,Double> dummy = iter.next();
+			int row = dummy.getKey();
+			double val = dummy.getValue();
+			values.put(row, val);			
+			
 		}
 	}
 
@@ -76,72 +79,80 @@ public class Column implements Callable<Double>{
 	@Override
 	public synchronized Double call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
-		outLeft = new Hashtable<>();
-		outRight= new Hashtable<>();
-		int localIterations = grid.getLocals();
-		for (int i=0; i<localIterations; i++){
-			akku = new Hashtable<>();
-			sigma = 0.0;
-			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
-			while(knoten.hasNext()){
-				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
+		
+		if(values.size()==0){
+		/*	exchangerLeft.exchange(outRight);
+			exchangerRight.exchange(outLeft);
+		*/	return 0.0;
+		}else{
+		
+			outLeft = new Hashtable<>();
+			outRight= new Hashtable<>();
+			int localIterations = grid.getLocals();
+			for (int i=0; i<localIterations; i++){
+				akku = new Hashtable<>();
+				sigma = 0.0;
+				Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
+				while(knoten.hasNext()){
+					/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
+					
+					Entry<Integer, Double> dummy= knoten.next();
+					double outflowLeft = 0.0,outflowRight = 0.0, outFlowTop = 0.0, outFlowDown = 0.0; //outflowTop (von n nach n-1) outFlowDown (von n nach n+1)
+					double val = dummy.getValue();
+					int currentPos = dummy.getKey();
+					
+					
+					/**die akkus von vorgaenger und nachfolger muessen geaendert werden. Zwei Faelle: *sessor gibt es noch nicht -> machen und mit outflowtop/bottom 
+					 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
+					 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/				
 				
-				Entry<Integer, Double> dummy= knoten.next();
-				double outflowLeft = 0.0,outflowRight = 0.0, outFlowTop = 0.0, outFlowDown = 0.0; //outflowTop (von n nach n-1) outFlowDown (von n nach n+1)
-				double val = dummy.getValue();
-				int currentPos = dummy.getKey();
+					if(me>0){ //if fuer randfall, spalte = 0
+						outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
+						addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
+					}
+					
+					if(me<graph.width-1){
+						outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
+						addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
+					}
+					
+					if(currentPos > 0){	//if fuer randfall 0	
+						outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
+						addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
+					}
+	
+					if(currentPos < graph.height-1){//if fuer randfall max
+						outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
+						addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
+					}
+					
+					/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
+					val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
+									
+					/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
+					addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
+	
+				}//while schleife zu
 				
-				/**value wird jetzt mit den outflow rate verrechnet, dabei muss **/
-				if(me>0){ //if fuer randfall, spalte = 0
-					outflowLeft = val * graph.getRateForTarget(me, currentPos, Neighbor.Left);
-					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
-				}
+				/*if(me > 0)
+					left.exchange vblabla*/
 				
-				if(me<graph.width-1){
-					outflowRight= val * graph.getRateForTarget(me, currentPos, Neighbor.Right);
-					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
-				}
 				
-				if(currentPos > 0){	//if fuer randfall 0	
-					outFlowTop  = val * graph.getRateForTarget(me, currentPos, Neighbor.Top);
-					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
-				}
-
-				if(currentPos < graph.height-1){//if fuer randfall max
-					outFlowDown = val * graph.getRateForTarget(me, currentPos, Neighbor.Bottom);
-					addOrReplaceEntry(akku, currentPos +1, akku.getOrDefault(currentPos +1, 0.0) + outFlowDown);
-				}
+				/**hier werden alle eintraege mit denen des akkus verechnet.**/
+				Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
+				while(acc.hasNext()){
+					Entry<Integer, Double> dummy = acc.next();
+					int pos = dummy.getKey();
+					double val = dummy.getValue();
+					sigma = sigma + val*val;
+					addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
+				}//while schleife zu
 				
-				/**die summe des outflows wird jetzt vom akku der aktuellen position abgezogen und gesetzt.**/
-				
-				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-								
-				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
-				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
-			
-				/**die akkus von vorgaenger und nachfolger muessen geaendert werden. Zwei Faelle: *sessor gibt es noch nicht -> machen und mit outflowtop/bottom 
-				 initialisieren. *sessor gibt es schon -> alten wert mit outflowtop bottom verrechnen und setzen.
-				 Die Fallunterscheidung is in der der Methode addOrReplaceEntry implementiert.**/				
-			
-			}//while schleife zu
-			
-			
-			
-			
-			/**hier werden alle eintraege mit denen des akkus verechnet.**/
-			Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
-			while(acc.hasNext()){
-				Entry<Integer, Double> dummy = acc.next();
-				int pos = dummy.getKey();
-				double val = dummy.getValue();
-				sigma = sigma + val*val;
-				addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
-			}//while schleife zu
-			
-			if(sigma <= crit)
-				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-		}//for schleife zu
-		return 0.0;
+				if(sigma <= crit)
+					break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+			}//for schleife zu
+			return 0.0;
+		}
 	}
 	
 	public double getSum(){
@@ -191,7 +202,7 @@ public class Column implements Callable<Double>{
 		/**aktualisiert oder ergaenzt eintraege in hashtables**/
 		if(map.containsKey(key))
 			map.replace(key, val);
-		else
+		else if(val != 0)
 			map.put(key, val);
 	}
 	

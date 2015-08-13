@@ -3,20 +3,20 @@ package implementation;
 
 import java.util.List;
 import java.util.Collection;
-import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.TreeSet;
+import java.util.concurrent.Exchanger;
+//import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import np2015.GraphInfo;
 import np2015.ImageConvertible;
 
 public class Grid implements ImageConvertible {
-
+	
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
 	private ExecutorService exe;
@@ -28,14 +28,8 @@ public class Grid implements ImageConvertible {
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();
 		
-		/**der konstruktor baut die spalten.**/
-		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
-		
-		while(iter.hasNext()){
-			Entry<Integer, HashMap<Integer, Double>> forGrid = iter.next();
-			Column column = new Column(graph, this, forGrid.getKey(), false);		
-			columns.put(forGrid.getKey(), column);
-		}//aeußere Schleife	
+		/**der konstruktor baut die spalten.**/		
+		makeColumns();
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
@@ -43,28 +37,22 @@ public class Grid implements ImageConvertible {
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();
 		
+		
 		/**der konstruktor baut die spalten.**/
-		Iterator<Entry<Integer,HashMap<Integer,Double>>> iter  = graph.column2row2initialValue.entrySet().iterator();
-		
-		while(iter.hasNext()){
-			Entry<Integer, HashMap<Integer, Double>> forGrid = iter.next();
-			Column column = new Column(graph, this, forGrid.getKey(), false);		
-			columns.put(forGrid.getKey(), column);
-		}//aeußere Schleife
-		
-		
+		makeColumns();
 	}
 	
 	public boolean serialComputation(){
 		
-		/**fuer eine rein sequentielle loesung**/
+		/**fuer den sequentiellen Teil der loesung**/
 		double eps = graph.epsilon*graph.epsilon;
 
 		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
 		while(spalten.hasNext())
 			spalten.next().getValue().call();
-		
-		addDummyColumns(); //bereitet alles fuer den exchange vor
+		/**
+		if(columns.size() < graph.width)
+			addDummyColumns(); **///bereitet alles fuer den exchange vor
 		
 		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
 			if(columns.containsKey(i) && columns.containsKey(i+1))							
@@ -98,9 +86,9 @@ public class Grid implements ImageConvertible {
 		}
 		
 		
-		/**passe die gridstruktur fuer die arbeit des exchangers an: fuege dummy spalten hinzu**/
+		/**passe die gridstruktur fuer die arbeit des exchangers an: fuege dummy spalten hinzu
 		if(columns.size() < graph.width)
-			addDummyColumns();
+			addDummyColumns();**/
 		
 		/**tausche rechten outflow gegen linken outflow zweier benachbarter columns**/
 		for(int i = 0; i < graph.width-1; i++){
@@ -160,10 +148,9 @@ public class Grid implements ImageConvertible {
 		}
 	}
 
-	public synchronized void addDummyColumns() {
+/**	public synchronized void addDummyColumns() {
 		
-		/**iteriert ueber das grid und erganzt rechts und links von existierenden columns leere dummy columns. Dazu merkt es sich die erst die keys 
-		 in einer ersten iteration und fuegt dann ein in einer zweiten.**/
+		
 		TreeSet<Integer> toMake = new TreeSet<>();
 		Iterator<Entry<Integer, Column>> iter = columns.entrySet().iterator();
 		while(iter.hasNext()){
@@ -176,13 +163,28 @@ public class Grid implements ImageConvertible {
 				toMake.add(key -1);		
 		}//Ende while schleife
 		
-		/**ergaenzen der dummies**/
+		
 		Iterator<Integer> set = toMake.iterator();
 		while(set.hasNext()){
 			int c = set.next().intValue();
 			columns.put(c, new Column(graph, this, c, true));
 		}
 		
+	}**/
+	
+	private void makeColumns(){
+		Exchanger<Hashtable<Integer,Double>> left, right;
+		left = null;
+		right = new Exchanger<Hashtable<Integer,Double>>();
+		for(int i= 0; i<graph.width; i++){
+			Column column = new Column(graph, this, i, left, right);		
+			columns.put(i, column);
+			left = right;
+			if(i<graph.width-1)
+				right = new Exchanger<Hashtable<Integer,Double>>();
+			else 
+				right = null;
+		}//for Schleife	
 	}
 
 	public synchronized Column getColumn(int i) {
