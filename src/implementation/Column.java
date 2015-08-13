@@ -1,11 +1,11 @@
-package src.implementation;
+package implementation;
 
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import src.np2015.GraphInfo;
-import src.np2015.Neighbor;
+import np2015.GraphInfo;
+import np2015.Neighbor;
 
 public class Column extends Thread {
 	

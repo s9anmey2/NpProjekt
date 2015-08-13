@@ -1,7 +1,7 @@
-package src.implementation;
+package implementation;
 
-import src.np2015.GraphInfo;
-import src.sequentiell.Sequentiell;
+import np2015.GraphInfo;
+import sequentiell.Sequentiell;
 
 public class Supervisor {
 	

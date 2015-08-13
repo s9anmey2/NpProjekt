@@ -1,9 +1,9 @@
-package src.sequentiell;
+package sequentiell;
 
 
-import src.np2015.GraphInfo;
+import np2015.GraphInfo;
 
-import src.implementation.Grid;
+import implementation.Grid;
 
 public class Sequentiell {
 	private Grid grid;

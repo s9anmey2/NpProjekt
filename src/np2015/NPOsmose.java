@@ -1,11 +1,11 @@
-package src.np2015;
+package np2015;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import src.implementation.Supervisor;
+import implementation.Supervisor;
 //import src.sequentiell.*;
 
 import com.google.gson.Gson;
