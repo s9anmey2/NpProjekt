@@ -46,7 +46,7 @@ public class Middle extends Column {
 	public synchronized Boolean call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
 		boolean ret;
-		
+
 		if(values.size()!=0)
 			localIteration();
 
@@ -82,9 +82,10 @@ public class Middle extends Column {
 		outLeft = new Hashtable<>();
 		outRight= new Hashtable<>();
 		int localIterations = grid.getLocals();
+
 		for (int i=0; i<localIterations; i++){
+
 			akku = new Hashtable<>();
-			//double sigma = 0.0;
 			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
 			while(knoten.hasNext()){
 				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
@@ -103,21 +104,11 @@ public class Middle extends Column {
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 
 			}//while schleife zu
-			
-			
-			/**hier werden alle eintraege mit denen des akkus verechnet.**/
-			Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
-			while(acc.hasNext()){
-				Entry<Integer, Double> dummy = acc.next();
-				int pos = dummy.getKey();
-				double val = dummy.getValue();
-			//	sigma = sigma + val*val;
-				addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
-			}//while schleife zu
-			
-			/**if(sigma <= epsilon)
-				break; falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+
+			if(addAccuToValuesAndLocalConvergence(akku, values))
+				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 		}//for schleife zu
+
 	}
 	
 	@Override

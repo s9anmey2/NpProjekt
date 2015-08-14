@@ -32,8 +32,6 @@ abstract public class Column implements Callable<Boolean>{
 	protected GraphInfo graph;		
 	protected Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	protected int me;
-	protected final double epsilonSchlange;
-	private double previousDelta = 0.0;
 	
 	public Column(GraphInfo graph, Grid grid, int y) {
 
@@ -44,8 +42,6 @@ abstract public class Column implements Callable<Boolean>{
 
 		this.akku = new Hashtable<>();
 		this.me = y; //y ist die spaltennummer
-		this.epsilonSchlange = (graph.epsilon*graph.epsilon)/graph.width;
-		System.out.println(epsilonSchlange);
 	
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -86,6 +82,22 @@ abstract public class Column implements Callable<Boolean>{
 	
 	abstract public void setRight(Hashtable<Integer, Double> left);
 	
+	synchronized protected boolean addAccuToValuesAndLocalConvergence(Hashtable<Integer,Double> akku, Hashtable<Integer, Double> values){
+		/**hier werden alle eintraege mit denen des akkus verechnet.**/
+		double sigma = 0.0;
+		Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
+
+		while(acc.hasNext()){
+			Entry<Integer, Double> dummy = acc.next();
+			int pos = dummy.getKey();
+			double val = dummy.getValue();
+			sigma = sigma + val*val;
+			addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
+		}//while schleife zu
+
+		return sigma <= grid.getEpsilonSchlange();
+	}
+	
 	synchronized protected boolean getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
 		double delta = 0.0;
 					
@@ -95,8 +107,7 @@ abstract public class Column implements Callable<Boolean>{
 			}
 		/*if(delta != 0.0)
 			System.out.println("Delta: " + delta + " Ratio: " + previousDelta/delta + " invoke by " + me);*/
-		previousDelta = delta;
-		return  delta<=epsilonSchlange;
+		return  delta <= grid.getEpsilonSchlange();
 	}
 	
 	protected double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){

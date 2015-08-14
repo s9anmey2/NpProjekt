@@ -20,9 +20,11 @@ public class Grid implements ImageConvertible {
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
 	private ExecutorService exe;
+	private double epsilonSchlange;
 	private volatile int localIterations; /**Der supervisor gibt dem grid die anzahl der localen schritte, damit sich die co,lumns diese dort abholen koennen.
 	Dazu gibt das Grid dann eine referenz auf sich selbst an die columns mit**/
 	/**wird mit dem aktuellen GraphInfo Objekt initialisiert und reicht dieses nach unten an die Columns weiter.**/
+
 	
 	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
@@ -33,51 +35,27 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
+		System.out.println("started");
+
 		this.exe = exe;
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>();
-		
-		
+		this.columns = new Hashtable<Integer, Column>();		
 		/**der konstruktor baut die spalten.**/
 		makeColumns();
 	}
 	
-	public boolean serialComputation(){
-
-		/**fuer den sequentiellen Teil der loesung**/
-		double eps = graph.epsilon*graph.epsilon;
-
-		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
-		while(spalten.hasNext())
-			spalten.next().getValue().localIteration();
-
-		
-		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
-			if(columns.containsKey(i) && columns.containsKey(i+1))							
-				exchange(i);
-		}//for schleife zu
-		
-		spalten = columns.entrySet().iterator();
-		double sigma = 0.0;
-		while(spalten.hasNext()) //berechnet delta(inflow, outflow) jeder Spalte und bildet die Summe der quadrate.
-			sigma = sigma + spalten.next().getValue().serialSigma();		
-		
-		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
-		while(spalten.hasNext())
-			spalten.next().getValue().computeNewValues();
-
-		return sigma < (eps);
-	}
-	
 	public synchronized boolean globalIteration() {
 		boolean converged = true;
+
 		/**hier jetzt den executor hin**/
 		try{
+
 			Collection<Column> tasks = columns.values();
 			List<Future<Boolean>> rets =  exe.invokeAll(tasks);
 			
 			for(Future<Boolean> col: rets)
 				converged = converged && col.get();
+			
 		}catch (Exception e){
 			System.out.println(":/");
 			return true;
@@ -113,6 +91,15 @@ public class Grid implements ImageConvertible {
 		return columns.get(i);
 	}
 	
+	public synchronized void setEpsilonSchlange(double factor){
+		epsilonSchlange = graph.epsilon * factor;
+		epsilonSchlange = epsilonSchlange*epsilonSchlange/graph.width;
+	}
+	
+	public double getEpsilonSchlange(){
+		return epsilonSchlange;
+	}
+	
 	@Override
 	public double getValueAt(int column, int row) {
 		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
@@ -124,6 +111,33 @@ public class Grid implements ImageConvertible {
 	
 	public int getLocals(){
 		return localIterations;
+	}
+	
+	public boolean serialComputation(){
+
+		/**fuer den sequentiellen Teil der loesung**/
+		double eps = graph.epsilon*graph.epsilon;
+
+		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
+		while(spalten.hasNext())
+			spalten.next().getValue().localIteration();
+
+		
+		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
+			if(columns.containsKey(i) && columns.containsKey(i+1))							
+				exchange(i);
+		}//for schleife zu
+		
+		spalten = columns.entrySet().iterator();
+		double sigma = 0.0;
+		while(spalten.hasNext()) //berechnet delta(inflow, outflow) jeder Spalte und bildet die Summe der quadrate.
+			sigma = sigma + spalten.next().getValue().serialSigma();		
+		
+		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
+		while(spalten.hasNext())
+			spalten.next().getValue().computeNewValues();
+
+		return sigma < (eps);
 	}
 	
 	/*HILSMETHODE ZUM TESTEN
