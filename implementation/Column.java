@@ -206,7 +206,7 @@ public class Column implements Callable<Boolean>{
 	
 	/*private double computeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){
 		double ret = 0.0;
-		if(rate != 0.0){
+		if(rate != 0.0 && val != 0.0){
 			ret = val * rate;
 			addOrReplaceEntry(map, currentPos, ret);
 		}
