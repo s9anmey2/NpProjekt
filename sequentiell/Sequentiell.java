@@ -42,7 +42,7 @@ public class Sequentiell {
 	 * @return Grid
 	 */
 	public synchronized Grid compute() {
-		System.out.println("Sequentiell.");
+		System.out.println("Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		boolean converged = false;
 
 		while (!(converged)) {

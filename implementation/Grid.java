@@ -35,7 +35,6 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
-		System.out.println("started");
 
 		this.exe = exe;
 		this.graph = graph;

@@ -30,9 +30,12 @@ public class NPOsmose {
 		}
 		GraphInfo ginfo = gson.fromJson(json, GraphInfo.class);
 		 //Your implementation can now access ginfo to read out all important values
+		
+		System.out.println("Start: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		ImageConvertible graph = new Supervisor(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
+		System.out.println("Ende: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
+
 		ginfo.write2File("./result.txt", graph);
-		System.out.println("Done.");
 	} 
 	
 }

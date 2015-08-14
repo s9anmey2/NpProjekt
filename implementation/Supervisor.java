@@ -14,12 +14,14 @@ public class Supervisor {
 	private int numLocalIterations;
 	private int maxLocal;
 	
+	private int grain = 0; //grain schritte bis epsilon
+	
 	public Supervisor(GraphInfo graph) {
 		this.exe = Executors.newFixedThreadPool(graph.width);
 		this.gInfo=graph;
 		this.grid = new Grid(gInfo, exe);	
 		this.numLocalIterations = 1;
-		this.maxLocal = 10*graph.width*graph.height;
+		this.maxLocal = graph.width*graph.height;
 	}
 	/**
 	 * 
@@ -34,24 +36,33 @@ public class Supervisor {
 	public synchronized Grid computeOsmose() {
 
 		boolean converged = false;
-		int exp = 3;
-		grid.setEpsilonSchlange(10^exp);
-		while(!(converged)){
+		int exp = grain;
+		
+		grid.setEpsilonSchlange(Math.pow(10, exp));
+		
+		while(!converged){
+			
 			grid.setLocals(numLocalIterations);
 			converged = grid.globalIteration();
-
-			if(converged && exp>0){
-				System.out.println("converged " + exp);
-				exp--;
-				if(exp>=0)
-					grid.setEpsilonSchlange(10^exp);
-				converged = false;
-				System.out.println("Start: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date()));
-				numLocalIterations = numLocalIterations/2; 
+			
+			if(converged){
+				
+				System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
+				
+				if(exp>0) {
+					numLocalIterations = numLocalIterations * (exp/(exp+1));
+					exp--;
+					grid.setEpsilonSchlange(Math.pow(10, exp));
+					converged = false;	
+				} else {
+					break;
+				}
+			
 			}else if(numLocalIterations < maxLocal){
 				numLocalIterations++;
 			}
 		}
+		
 		exe.shutdown();
 		Sequentiell seq = new Sequentiell(grid);
 		return seq.compute();
