@@ -45,7 +45,7 @@ abstract public class Column implements Callable<Boolean>{
 		this.akku = new Hashtable<>();
 		this.me = y; //y ist die spaltennummer
 		this.epsilonSchlange = (graph.epsilon*graph.epsilon)/graph.width;
-		
+		System.out.println(epsilonSchlange);
 	
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -93,8 +93,8 @@ abstract public class Column implements Callable<Boolean>{
 				double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
 				delta= val*val + delta;
 			}
-		if(delta != 0.0)
-			System.out.println("Delta: " + delta + " Ratio: " + previousDelta/delta + " invoke by " + me);
+		/*if(delta != 0.0)
+			System.out.println("Delta: " + delta + " Ratio: " + previousDelta/delta + " invoke by " + me);*/
 		previousDelta = delta;
 		return  delta<=epsilonSchlange;
 	}
