@@ -20,6 +20,10 @@ public class Supervisor {
 		this.numLocalIterations = 100;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	public synchronized Grid computeOsmose() {
 		boolean converged = false;
 		

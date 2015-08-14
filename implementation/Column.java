@@ -44,7 +44,7 @@ public class Column implements Callable<Boolean>{
 	private Exchanger<Hashtable<Integer,Double>> left, right;
 	private final double epsilon;
 	private double[][] rates;
-	
+
 	
 	public Column(GraphInfo graph, Grid grid, int y, Exchanger<Hashtable<Integer,Double>> left, Exchanger<Hashtable<Integer, Double>> right) {
 
@@ -60,14 +60,12 @@ public class Column implements Callable<Boolean>{
 		this.right = right;
 		this.epsilon = (graph.epsilon*graph.epsilon)/graph.width;
 		this.rates = new double[graph.height][4];
-		
 		for(int i=0; i<graph.height; i++){
-			this.rates[i][0] = graph.getRateForTarget(me, i, Neighbor.Left); //0=left
-			this.rates[i][1] = graph.getRateForTarget(me, i, Neighbor.Top);//1=Top
-			this.rates[i][2] = graph.getRateForTarget(me, i, Neighbor.Right);//2=Right
-			this.rates[i][3] = graph.getRateForTarget(me, i, Neighbor.Bottom);//4=Bottom
+			this.rates[i][Neighbor.Left.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Left); 
+			this.rates[i][Neighbor.Top.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Top);
+			this.rates[i][Neighbor.Right.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Right);
+			this.rates[i][Neighbor.Top.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Bottom);
 		}
-		
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
 			
@@ -79,7 +77,14 @@ public class Column implements Callable<Boolean>{
 			
 		}
 	}
-
+/**-------------------------KONSTRUKTOR ENDE--------------------------------------------------------------------------------------------------------------
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 																																							**/
 	
 	@Override
 	public synchronized Boolean call() {
@@ -96,13 +101,9 @@ public class Column implements Callable<Boolean>{
 				double delta = 0.0;
 				
 				for (int j = 0; j<graph.height; j++){
-					//double a = leftAccu.getOrDefault(j, 0.0);
-					//double b = outLeft.getOrDefault(j, 0.0);
-					//System.out.println(a+ "minus" +b);
 					double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
 					delta= val*val + delta;
 				}
-				System.out.println("delta: " + delta + "  						 epsilon: " + epsilon);
 				ret = delta<=epsilon;
 				
 			}else
@@ -160,13 +161,13 @@ public class Column implements Callable<Boolean>{
 					addOrReplaceEntry(outLeft, currentPos, outLeft.getOrDefault(currentPos, 0.0) + outflowLeft);			
 				}
 				
-				if(rates[currentPos][2] != 0.0){
-					outflowRight= val * rates[currentPos][2];
+				if(rates[currentPos][1] != 0.0){
+					outflowRight= val * rates[currentPos][1];
 					addOrReplaceEntry(outRight, currentPos, outRight.getOrDefault(currentPos, 0.0) + outflowRight);
 				}
 				
-				if(rates[currentPos][1] != 0.0){	//if fuer randfall 0	
-					outFlowTop  =  val * rates[currentPos][1];
+				if(rates[currentPos][2] != 0.0){	//if fuer randfall 0	
+					outFlowTop  =  val * rates[currentPos][2];
 					addOrReplaceEntry(akku, currentPos -1, akku.getOrDefault(currentPos -1,0.0) + outFlowTop);
 				}
 
@@ -177,7 +178,11 @@ public class Column implements Callable<Boolean>{
 				
 				/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
 				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-	
+				/*val = computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Top.ordinal()])
+						+computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Bottom.ordinal()])
+						+computeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
+						+computeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]);*/
+				
 				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 
@@ -190,14 +195,23 @@ public class Column implements Callable<Boolean>{
 				Entry<Integer, Double> dummy = acc.next();
 				int pos = dummy.getKey();
 				double val = dummy.getValue();
-				sigma = sigma + val*val;
+			//	sigma = sigma + val*val;
 				addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
 			}//while schleife zu
 			
-			if(sigma <= epsilon)
-				break; /**falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+			/**if(sigma <= epsilon)
+				break; falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 		}//for schleife zu
 	}
+	
+	/*private double computeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){
+		double ret = 0.0;
+		if(rate != 0.0){
+			ret = val * rate;
+			addOrReplaceEntry(map, currentPos, ret);
+		}
+		return ret;
+	}*/
 	
 	public double getSum(){
 		double ret= 0.0;

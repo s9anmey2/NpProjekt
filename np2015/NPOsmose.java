@@ -32,9 +32,14 @@ public class NPOsmose {
 			System.err.println("You must provide the serialized file as the first argument!");
 		}
 		GraphInfo ginfo = gson.fromJson(json, GraphInfo.class);
-		// Your implementation can now access ginfo to read out all important values
+		 //Your implementation can now access ginfo to read out all important values
 		ImageConvertible graph = new Supervisor(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
 		ginfo.write2File("./result.txt", graph);
+		System.out.println("Left " + Neighbor.Left.ordinal());
+		System.out.println("Right " + Neighbor.Right.ordinal());
+		System.out.println("Top" + Neighbor.Top.ordinal());
+		System.out.println("Bottom" + Neighbor.Bottom.ordinal());
+
 		System.out.println("Done.");
 	} 
 	
