@@ -64,7 +64,7 @@ public class Column implements Callable<Boolean>{
 			this.rates[i][Neighbor.Left.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Left); 
 			this.rates[i][Neighbor.Top.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Top);
 			this.rates[i][Neighbor.Right.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Right);
-			this.rates[i][Neighbor.Top.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Bottom);
+			this.rates[i][Neighbor.Bottom.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Bottom);
 		}
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 		Iterator<Entry<Integer,Double>> iter = name.entrySet().iterator();
@@ -178,10 +178,11 @@ public class Column implements Callable<Boolean>{
 				
 				/**wir benutzen value hier als dummy variable, um den outflow mit dem akutellen wert im akku zu verrechnen.**/
 				val = -(outflowLeft + outflowRight + outFlowTop + outFlowDown);
-				/*val = computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Top.ordinal()])
-						+computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Bottom.ordinal()])
-						+computeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
-						+computeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]);*/
+				/* 
+				 * val = computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Top.ordinal()], Neighbor.Top.ordinal())
+						+computeOutflow(akku, val, currentPos, rates[currentPos][Neighbor.Bottom.ordinal()], Neighbor.Bottom.ordinal())
+						+computeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()], Neighbor.Left.ordinal())
+						+computeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()], Neighbor.Right.ordinal());*/
 				
 				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
@@ -204,11 +205,14 @@ public class Column implements Callable<Boolean>{
 		}//for schleife zu
 	}
 	
-	/*private double computeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){
+	/*private double computeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate, int ord){
 		double ret = 0.0;
 		if(rate != 0.0 && val != 0.0){
 			ret = val * rate;
-			addOrReplaceEntry(map, currentPos, ret);
+			if (ord > 1) // => ((2 => top)=>pos - 1 oder (3 => bottom)=> pos + 1)
+				addOrReplaceEntry(map, currentPos, map.getOrDefault(currentPos + (1-(ord % 3)),0.0)  + ret);
+			else
+				addOrReplaceEntry(map, currentPos, map.getOrDefault(currentPos,0.0)  + ret);
 		}
 		return ret;
 	}*/
