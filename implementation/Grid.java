@@ -43,7 +43,7 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public boolean serialComputation(){
-		
+
 		/**fuer den sequentiellen Teil der loesung**/
 		double eps = graph.epsilon*graph.epsilon;
 
@@ -75,6 +75,7 @@ public class Grid implements ImageConvertible {
 		try{
 			Collection<Column> tasks = columns.values();
 			List<Future<Boolean>> rets =  exe.invokeAll(tasks);
+			
 			for(Future<Boolean> col: rets)
 				converged = converged && col.get();
 		}catch (Exception e){
@@ -82,14 +83,6 @@ public class Grid implements ImageConvertible {
 			return true;
 		}		
 		return converged;
-	}
-	
-	public double getSum(){
-		Iterator<Entry<Integer, Column>> col = columns.entrySet().iterator();
-		double ret = 0.0;
-		while(col.hasNext())
-			ret = ret + col.next().getValue().getSum();
-		return ret;
 	}
 
 	private synchronized void exchange(int i){
@@ -102,17 +95,18 @@ public class Grid implements ImageConvertible {
 
 	private void makeColumns(){
 		Exchanger<Hashtable<Integer,Double>> left, right;
-		left = null;
+		
 		right = new Exchanger<Hashtable<Integer,Double>>();
-		for(int i= 0; i<graph.width; i++){
-			Column column = new Column(graph, this, i, left, right);		
-			columns.put(i, column);
+		columns.put(0, new LeftBorder(graph, this, 0, right));
+		
+		for(int i= 1; i<graph.width-1; i++){
 			left = right;
-			if(i<graph.width-1)
-				right = new Exchanger<Hashtable<Integer,Double>>();
-			else 
-				right = null;
+			right = new Exchanger<Hashtable<Integer,Double>>();
+			columns.put(i, new Middle(graph, this, i, left, right));
 		}//for Schleife	
+		left = right;
+		
+		columns.put(graph.width-1, new RightBorder(graph, this, graph.width-1, left));
 	}
 
 	public synchronized Column getColumn(int i) {
@@ -131,4 +125,13 @@ public class Grid implements ImageConvertible {
 	public int getLocals(){
 		return localIterations;
 	}
+	
+	/*HILSMETHODE ZUM TESTEN
+	 * public double getSum(){
+		Iterator<Entry<Integer, Column>> col = columns.entrySet().iterator();
+		double ret = 0.0;
+		while(col.hasNext())
+			ret = ret + col.next().getValue().getSum();
+		return ret;
+	}*/
 }

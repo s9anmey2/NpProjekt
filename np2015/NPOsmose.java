@@ -13,10 +13,7 @@ import com.google.gson.Gson;
 public class NPOsmose {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		
-	/*	Logger logger = new Logger();
-		logger.addSingleLine("halalalal", "whatever");
-		logger.print();*/
+
 		
 		Gson gson = new Gson();
 		String json = "";
