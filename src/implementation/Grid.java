@@ -17,6 +17,7 @@ import np2015.ImageConvertible;
  * Das Grid stellt das Gitter bestehend aus Columns dar. Es stellt Methoden zur
  * nebenläufigen und sequentiellen Berechnung eines Osmoseprozesses auf dem
  * Gitter zur Verfügung.
+ * Grid ist ein Monitor.
  */
 public class Grid implements ImageConvertible {
 	// TODO entfernen: public Lab lab;
