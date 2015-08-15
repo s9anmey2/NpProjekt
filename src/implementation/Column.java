@@ -101,7 +101,7 @@ abstract public class Column implements Callable<Integer>{
 	}
 	
 	synchronized protected int getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
-		/**mit previous delta: (delta<= epsilon) -> return 0; (delta/previousDelta<=treshold) -> return 2; else 1
+		/**Konvergenz (delta<= epsilon) -> return 0; (delta/previousDelta<=treshold) -> return -1; else 1
 		 * 
 		 * Der Sinn dahinter ist: falls das Verhalten des Prozesses mit einer bestimmten lokalen Iterationszahl 
 		 * zyklisch ist, dann ist das Verhältnis delta: previousDelta <1, weshalb die Schrittzahl geaendert werden muss.**/
@@ -118,7 +118,7 @@ abstract public class Column implements Callable<Integer>{
 				if(ratio<=epsilon)
 					return 0;
 				if(ratio<=1.0001)
-					return 2;
+					return -1;
 		}return 1;
 	}
 	

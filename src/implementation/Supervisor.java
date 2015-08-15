@@ -59,7 +59,7 @@ public class Supervisor {
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
-		while(!(converged == gInfo.width -1)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
+		while(!(converged == 0)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
 			converged = grid.globalIteration();
 			if((converged == 0) || numLocalIterations >= maxLocal ){
 				break;
@@ -72,8 +72,8 @@ public class Supervisor {
 		//int i=0, j=0;
 
 		// ab jetzt wir numLocalIterations nur noch verringert
-		while(!(converged == gInfo.width-1)){
-			/**hier muessen wir die Anzahl der localen Iterationne veraendern, falls converged == 2*(gInfo.widht-1)!!**/
+		while(!(converged == 0)){
+			/**hier muessen wir die Anzahl der localen Iterationen veraendern, falls converged < -1!!**/
 			
 			converged = grid.globalIteration();
 		}
