@@ -103,7 +103,8 @@ public class Supervisor {
 		
 		// zum Schluss noch die sequentielle Ausführung
 		Sequentiell seq = new Sequentiell(grid);
-//		grid.lab.print();
+
+		//grid.lab.print();
 		System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		return seq.computeOsmose();
 	}

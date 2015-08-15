@@ -23,17 +23,17 @@ public class Grid implements ImageConvertible {
 	
 	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>();
 		
 		/**der konstruktor baut die spalten.**/		
 		makeColumns();
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
-	//	this.lab = new Lab();
+
+		//this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>();		
+		this.columns = new Hashtable<Integer, Column>(graph.width, 1);		
 		/**der konstruktor baut die spalten.**/
 		makeColumns();
 	}
