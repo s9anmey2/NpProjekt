@@ -12,7 +12,7 @@ import np2015.GraphInfo;
  * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
  * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
  */
-abstract public class Column implements Callable<Boolean>{
+abstract public class Column implements Callable<Integer>{
 	
 	/**
 	 * values enthält die aktuellen Werte der Spalte.
@@ -33,6 +33,7 @@ abstract public class Column implements Callable<Boolean>{
 	protected Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	protected int me, localIterations;
 	protected double epsilon;
+	private double previousDelta = 0.0;
 	
 	public Column(GraphInfo graph, Grid grid, int y) {
 
@@ -65,7 +66,7 @@ abstract public class Column implements Callable<Boolean>{
  * 																																							**/
 	
 	@Override
-	abstract public Boolean call();
+	abstract public Integer call();
 	
 	abstract protected void exchange();
 	
@@ -99,16 +100,26 @@ abstract public class Column implements Callable<Boolean>{
 		return sigma <= epsilon;
 	}
 	
-	synchronized protected boolean getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
+	synchronized protected int getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
+		/**mit previous delta: (delta<= epsilon) -> return 0; (delta/previousDelta<=treshold) -> return 2; else 1
+		 * 
+		 * Der Sinn dahinter ist: falls das Verhalten des Prozesses mit einer bestimmten lokalen Iterationszahl 
+		 * zyklisch ist, dann ist das Verhältnis delta: previousDelta <1, weshalb die Schrittzahl geaendert werden muss.**/
+
 		double delta = 0.0;
-					
+		double ratio = 0.0;
 			for (int j = 0; j<graph.height; j++){
 				double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
 				delta= val*val + delta;
 			}
-		/*if(delta != 0.0)
-			System.out.println("Delta: " + delta + " Ratio: " + previousDelta/delta + " invoke by " + me);*/
-		return  delta <= epsilon;
+		if(delta != 0.0 && previousDelta != 0.0){
+			if(delta != 0.0)
+				 ratio = delta/previousDelta;
+				if(ratio<=epsilon)
+					return 0;
+				if(ratio<=1.0001)
+					return 2;
+		}return 1;
 	}
 	
 	protected double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){

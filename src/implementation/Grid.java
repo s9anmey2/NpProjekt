@@ -38,21 +38,21 @@ public class Grid implements ImageConvertible {
 		makeColumns();
 	}
 	
-	public synchronized boolean globalIteration() {
-		boolean converged = true;
+	public synchronized int globalIteration() {
+		int converged = 0;
 
 		/**hier jetzt den executor hin**/
 		try{
 
 			Collection<Column> tasks = columns.values();
-			List<Future<Boolean>> rets =  exe.invokeAll(tasks);
+			List<Future<Integer>> rets =  exe.invokeAll(tasks);
 			
-			for(Future<Boolean> col: rets)
-				converged = converged && col.get();
+			for(Future<Integer> col: rets)
+				converged = converged + col.get();
 			
 		}catch (Exception e){
 			System.out.println(":/");
-			return true;
+			return 0;
 		}		
 		return converged;
 	}
@@ -79,8 +79,7 @@ public class Grid implements ImageConvertible {
 	
 	public synchronized void setLocals(int n){
 		Collection<Column> set= columns.values();
-		for(Column col: set)
-			col.setLocals(n);
+		set.stream().parallel().forEach(column -> column.setLocals(n));
 			
 	}
 	

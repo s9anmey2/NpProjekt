@@ -30,9 +30,9 @@ public class RightBorder extends Column {
 	}	
 	
 	@Override
-	public synchronized Boolean call() {
+	public synchronized Integer call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
-		boolean ret;
+		int ret;
 		if(values.size()!=0)
 			localIteration();
 		

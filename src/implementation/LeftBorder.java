@@ -32,14 +32,14 @@ public class LeftBorder extends Column {
 	}
 
 	@Override
-	public synchronized Boolean call() {
+	public synchronized Integer call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
 
 		if(values.size()!=0)
 			localIteration();
 		exchange();
 		computeNewValues();
-		return true;
+		return 0;
 		
 	}
 

@@ -55,13 +55,13 @@ public class Supervisor {
 	 */
 	public synchronized Grid computeOsmose() {
 
-		boolean converged = false;
+		int converged = 0;
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
-		while(!converged){
+		while(!(converged == gInfo.width -1)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
 			converged = grid.globalIteration();
-			if(converged || numLocalIterations >= maxLocal ){
+			if((converged == 0) || numLocalIterations >= maxLocal ){
 				break;
 			}
 			numLocalIterations++;
@@ -72,10 +72,8 @@ public class Supervisor {
 		//int i=0, j=0;
 
 		// ab jetzt wir numLocalIterations nur noch verringert
-		while(!converged){
-			//if(i++ >= 1000){
-			//	i=0; gInfo.write2File("./zwischenergebnis"+ j++ +".txt", grid);
-			//}
+		while(!(converged == gInfo.width-1)){
+			/**hier muessen wir die Anzahl der localen Iterationne veraendern, falls converged == 2*(gInfo.widht-1)!!**/
 			
 			converged = grid.globalIteration();
 		}
