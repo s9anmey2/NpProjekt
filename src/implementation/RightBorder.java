@@ -8,9 +8,16 @@ import java.util.concurrent.Exchanger;
 import np2015.GraphInfo;
 import np2015.Neighbor;
 
+/**
+ * Diese Klasse erbt von Column und deckt den rechten Rand ab.
+ * **/
+
 public class RightBorder extends Column {
-	private Hashtable<Integer, Double> outLeft;	
 	
+	/**
+	 * Rightborder muss nur mit einem Nachbarn kommunizieren.
+	 * **/
+	private Hashtable<Integer, Double> outLeft;	
 	private Exchanger<Hashtable<Integer,Double>> left;
 	private double[][] rates;
 
@@ -29,9 +36,12 @@ public class RightBorder extends Column {
 		}
 	}	
 	
+	/**
+	 * Kein Unterschied zur Implementierung in Middle.
+	 */
+	
 	@Override
 	public synchronized Integer call() {
-		/**berechnet den akku und den horizontalen outflow knotenweise.**/
 		int ret;
 		if(values.size()!=0)
 			localIteration();
@@ -44,6 +54,10 @@ public class RightBorder extends Column {
 		return ret;
 	}
 
+	/**
+	 * Holt den Inflow von links ab. 
+	 */
+	
 	@Override
 	protected void exchange(){
 		try {					
@@ -54,6 +68,10 @@ public class RightBorder extends Column {
 		}
 	}
 
+	/**
+	 * Der Unterschied zum allgemeinen Fall ist, dass setAndComputeOutflow fuer drei statt vier Nachbarn aufgerufen wird. 
+	 */
+	
 	@Override
 	public void localIteration(){
 		

@@ -9,9 +9,11 @@ import java.util.concurrent.Callable;
 import np2015.GraphInfo;
 
 /**
- * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
- * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
- */
+ * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden, welche die Berechnungen ausführen, die nur eine Spalte betreffen. 
+ *  
+ *  Das Gitter in Spalten zu unterteilen, die parallel bearbeitet werden, bedingt zwei Randfaelle. Um diese abzufangen organisieren wir die Menge aller Spalten
+ *  in einer Klassenhierarchie, mit 3 Kindern,  von denen eines den linken, eines den rechten Rand implementiert und das dritte den allgemeinen Fall.
+ *  **/
 abstract public class Column implements Callable<Integer>{
 	
 	/**
