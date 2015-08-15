@@ -13,119 +13,163 @@ import java.util.concurrent.Future;
 import np2015.GraphInfo;
 import np2015.ImageConvertible;
 
+/**
+ * Das Grid stellt das Gitter bestehend aus Columns dar. Es stellt Methoden zur
+ * nebenläufigen und sequentiellen Berechnung eines Osmoseprozesses auf dem
+ * Gitter zur Verfügung.
+ */
 public class Grid implements ImageConvertible {
-	//public Lab lab;
-	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
+	// TODO entfernen: public Lab lab;
+	private Hashtable<Integer, Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
-	
-	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
+
+	/**
+	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
+	 * mitgegebenen GraphInfo Objekt den Initialen Wert ausliest. Dieser
+	 * Konstruktor ist für die sequentielle Lösung gedacht. Soll nebenläufig
+	 * gearbeitet werden, so muss zusätzlich ein EcecutorService übergeben
+	 * werden.
+	 * 
+	 * @param graph
+	 */
+	public Grid(GraphInfo graph) {
 		this.graph = graph;
-		
-		/**der konstruktor baut die spalten.**/		
 		makeColumns();
 	}
-	
-	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
 
-		//this.lab = new Lab();
+	/**
+	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
+	 * mitgegebenen GraphInfo Objekt den Initialen Wert ausliest. Dieser
+	 * Konstruktor ist für die nebenläufige Lösung gedacht. Soll sequentiell
+	 * gearbeitet werden, so kann auf den EcecutorService verzichtet werden.
+	 * 
+	 * @param graph
+	 * @param exe
+	 */
+	public Grid(GraphInfo graph, ExecutorService exe) {
+		// TODO entfernen: this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>(graph.width, 1);		
-		/**der konstruktor baut die spalten.**/
+		this.columns = new Hashtable<Integer, Column>(graph.width, 1);
 		makeColumns();
 	}
-	
+
+	/**
+	 * Die Methode globalIteration führt nebenläufig für allen Spalten eine,
+	 * zuvor durch setLokals gesetzte, Anzahl von lokalen Iterationen durch.
+	 * 
+	 * @return TODO beschreiben
+	 */
 	public synchronized int globalIteration() {
-		int converged = 0;
-
-		/**hier jetzt den executor hin**/
-		try{
-
+		int converged = 0; // TODO gescheid kommentieren wenn fertig.
+		try {
 			Collection<Column> tasks = columns.values();
-			List<Future<Integer>> rets =  exe.invokeAll(tasks);
-			
-			for(Future<Integer> col: rets)
+			List<Future<Integer>> rets = exe.invokeAll(tasks);
+
+			for (Future<Integer> col : rets)
 				converged = converged + col.get();
-			
-		}catch (Exception e){
+		} catch (Exception e) {
 			System.out.println(":/");
 			return 0;
-		}		
+		}
 		return converged;
 	}
 
-	private void makeColumns(){
-		Exchanger<Hashtable<Integer,Double>> left, right;
-		
-		right = new Exchanger<Hashtable<Integer,Double>>();
-		columns.put(0, new LeftBorder(graph, this, 0, right));
-		
-		for(int i= 1; i<graph.width-1; i++){
-			left = right;
-			right = new Exchanger<Hashtable<Integer,Double>>();
-			columns.put(i, new Middle(graph, this, i, left, right));
-		}//for Schleife	
-		left = right;
-		
-		columns.put(graph.width-1, new RightBorder(graph, this, graph.width-1, left));
-	}
+	/**
+	 * serialComputation führt einen lokalen Iterationsschritt auf jeder Column
+	 * aus prüft die globale Konvergenz. Zuvor muss setLocals(1) aufgerufen
+	 * worden sein.
+	 * 
+	 * @return true falls die globale Konvergenz erreicht ist.
+	 */
+	public synchronized boolean serialComputation() {
+		double eps = graph.epsilon * graph.epsilon;
 
-	public synchronized Column getColumn(int i) {
-		return columns.get(i);
-	}
-	
-	public synchronized void setLocals(int n){
-		Collection<Column> set= columns.values();
-		set.stream().parallel().forEach(column -> column.setLocals(n));
-			
-	}
-	
-	@Override
-	public double getValueAt(int column, int row) {
-		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
-	}
-	
-	public boolean serialComputation(){
-
-		/**fuer den sequentiellen Teil der loesung**/
-		double eps = graph.epsilon*graph.epsilon;
-
-		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator(); //berechnet vertikalen flow mit lokalen Iterationschritten = 1
-		while(spalten.hasNext())
+		/*
+		 * führe auf allen Columns eine lokale Iteration aus:
+		 */
+		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator();
+		while (spalten.hasNext())
 			spalten.next().getValue().localIteration();
 
-		
-		for(int i = 0; i < graph.width-1; i++){ //exchange: outflow -> inflow
-			if(columns.containsKey(i) && columns.containsKey(i+1))							
+		/*
+		 * tausche die den horizontalen Flow der Spalten aus:
+		 */
+		for (int i = 0; i < graph.width - 1; i++) {
+			if (columns.containsKey(i) && columns.containsKey(i + 1))
 				exchange(i);
-		}//for schleife zu
-		
+		}
+
+		/*
+		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
+		 * Quadtate der Knotendifferenzen (serialSigma()) addiert
+		 */
 		spalten = columns.entrySet().iterator();
 		double sigma = 0.0;
-		while(spalten.hasNext()) //berechnet delta(inflow, outflow) jeder Spalte und bildet die Summe der quadrate.
-			sigma = sigma + spalten.next().getValue().serialSigma();		
-		
-		spalten = columns.entrySet().iterator(); //im nebenlaeufigen macht das nodeeval! Hier wird einfach der horizontale flow verrechnet.
-		while(spalten.hasNext())
+		while (spalten.hasNext())
+			sigma = sigma + spalten.next().getValue().serialSigma();
+
+		/*
+		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte addiert.
+		 */
+		spalten = columns.entrySet().iterator();
+		while (spalten.hasNext())
 			spalten.next().getValue().computeNewValues();
 
+		/*
+		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
+		 * Quadtate der Knotendifferenzen < Quadtat von Epsilon
+		 */
 		return sigma < (eps);
 	}
 
-	private synchronized void exchange(int i){//benutzt nur der sequentielle Teil
+	/**
+	 * Erzeugt alle Spalten mit entsprechenden Exchangern.
+	 */
+	private synchronized void makeColumns() {
+		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+
+		rightEx = new Exchanger<Hashtable<Integer, Double>>();
+		columns.put(0, new LeftBorder(graph, this, 0, rightEx));
+
+		for (int i = 1; i < graph.width - 1; i++) {
+			leftEx = rightEx;
+			rightEx = new Exchanger<Hashtable<Integer, Double>>();
+			columns.put(i, new Middle(graph, this, i, leftEx, rightEx));
+		}
+		leftEx = rightEx;
+
+		columns.put(graph.width - 1, new RightBorder(graph, this, graph.width - 1, leftEx));
+	}
+
+	/**
+	 * Setzt die Anzahl der lokalen Iterationen.
+	 * 
+	 * @param n
+	 */
+	public synchronized void setLocals(int n) {
+		Collection<Column> set = columns.values();
+		set.stream().parallel().forEach(column -> column.setLocals(n));
+
+	}
+
+	@Override
+	public synchronized double getValueAt(int column, int row) {
+		return (columns.containsKey(column)) ? columns.get(column).getValue(row) : 0.0;
+	}
+
+	/**
+	 * Taucht den Outflow im falle der sequentiellen Ausführung.
+	 * 
+	 * @param i
+	 */
+	private synchronized void exchange(int i) {// benutzt nur der sequentielle
+												// Teil
 		Column left = columns.get(i);
-		Column right = columns.get(i+1);
-		Hashtable<Integer, Double> dummyRight = left.getRight();	
+		Column right = columns.get(i + 1);
+		Hashtable<Integer, Double> dummyRight = left.getRight();
 		left.setRight(right.getLeft());
 		right.setLeft(dummyRight);
 	}
-	/*HILSMETHODE ZUM TESTEN
-	 * public double getSum(){
-		Iterator<Entry<Integer, Column>> col = columns.entrySet().iterator();
-		double ret = 0.0;
-		while(col.hasNext())
-			ret = ret + col.next().getValue().getSum();
-		return ret;
-	}*/
 }
