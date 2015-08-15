@@ -30,10 +30,9 @@ public class Supervisor {
 	 */
 	private int maxLocal;
 
-	private int grain = 5; //grain schritte bis epsilon TODO funktioniert noch nicht richtig.
+	private int grain = 10; //grain schritte bis epsilon TODO funktioniert noch nicht richtig.
 	
 	public Supervisor(GraphInfo graph) {
-		System.out.println("wenn du das liest, sieht es gut aus."); 
 		this.exe = Executors.newFixedThreadPool(graph.width);
 		this.gInfo=graph;
 		this.grid = new Grid(gInfo, exe);	
@@ -89,7 +88,7 @@ public class Supervisor {
 			if(converged){
 				System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 				if(exp>0) {
-					numLocalIterations = numLocalIterations * (exp/(exp+1));
+					numLocalIterations = (int)((double)numLocalIterations * ((double)exp/(double)(exp+1)));
 					exp--;
 					grid.setEpsilonSchlange(Math.pow(10, exp));
 					converged = false;	
