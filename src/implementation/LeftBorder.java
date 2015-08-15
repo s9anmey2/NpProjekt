@@ -8,10 +8,16 @@ import java.util.concurrent.Exchanger;
 import np2015.GraphInfo;
 import np2015.Neighbor;
 
+/**
+ * Diese Klasse erbt von Column und deckt den linken Rand ab.
+ * **/
+
 public class LeftBorder extends Column {
 	
+	/**
+	 * Leftborder muss nur mit einem Nachbarn kommunizieren.
+	 * **/
 	private Hashtable<Integer, Double> outRight;
-	
 	private Exchanger<Hashtable<Integer,Double>> right;
 	private double[][] rates;
 	
@@ -31,9 +37,14 @@ public class LeftBorder extends Column {
 		}
 	}
 
+	/**
+	 * Im Unterschied zu den uebirgen Faellen, muss leftBorder nicht ueberpruefen, ob das Konvergenzkriterium erfuellt ist, dass erledigt der rechte Nachbar.
+	 * 
+	 * @return immer 0.
+	 */
+	
 	@Override
 	public synchronized Integer call() {
-		/**berechnet den akku und den horizontalen outflow knotenweise.**/
 
 		if(values.size()!=0)
 			localIteration();
@@ -42,9 +53,14 @@ public class LeftBorder extends Column {
 		return 0;
 		
 	}
+	
+	/**
+	 * Holt den Inflow von rechts ab. 
+	 */
 
 	@Override
 	protected void exchange(){
+		
 		try {
 			outRight = right.exchange(outRight);	
 		} catch (InterruptedException e) {
@@ -53,6 +69,10 @@ public class LeftBorder extends Column {
 		}
 	}
 
+	/**
+	 * Der Unterschied zum allgemeinen Fall ist, dass setAndComputeOutflow fuer drei statt vier Nachbarn aufgerufen wird. 
+	 */
+	
 	@Override
 	public void localIteration(){
 
@@ -78,18 +98,19 @@ public class LeftBorder extends Column {
 
 			}//while schleife zu
 			
-			if(addAccuToValuesAndLocalConvergence(akku, values)){
-				//grid.lab.setBreak(i);
+			if(addAccuToValuesAndLocalConvergence(akku, values))
 				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-			}
 		}//for schleife zu
-		//if(i==localIterations)
-			//grid.lab.setNoBreak(i);
 	}
-
+	
+	/**
+	 * Diese Methode verwendet die sequentielle Loesung. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow 
+	 * 
+	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
+	 */
+	
 	@Override
 	public double serialSigma(){
-		/**fuer die sequentielle loesung wichtig. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow **/
 		double sigma=0.0;
 		for (int i=0; i<graph.height; i++){
 			double val = akku.getOrDefault(i, 0.0) + outRight.getOrDefault(i,0.0);
@@ -97,7 +118,9 @@ public class LeftBorder extends Column {
 		}
 		return sigma;
 	}
-
+	/**
+	 * Berechnet nach jeder lokalen Iteration values neu: value(i) = value(i) + outRight(i)
+	 * **/
 	@Override
 	public synchronized void computeNewValues() {
 		
@@ -112,6 +135,12 @@ public class LeftBorder extends Column {
 
 	}
 
+	/**
+	 * Da Leftborder keinen linken NAchbarn hat, gibts auch keinen linken Flow zurueck.
+	 * 
+	 * @return null.
+	 */
+	
 	@Override
 	public Hashtable<Integer, Double> getLeft() {
 		return null;
@@ -122,6 +151,9 @@ public class LeftBorder extends Column {
 		return outRight;
 	}
 
+	/**
+	 * Da Leftborder keinen linken NAchbarn hat, kann hier auch nichts gesetzt werden.
+	 */
 	@Override
 	public void setLeft(Hashtable<Integer, Double> right) {
 		return;

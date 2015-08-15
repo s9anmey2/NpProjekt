@@ -8,12 +8,15 @@ import java.util.concurrent.Exchanger;
 import np2015.GraphInfo;
 import np2015.Neighbor;
 
+/**
+ *Der allgemeine Fall: Alle Spalten mit zwei Nachbarn sind Unterklasse Middle.
+ */
+
 public class Middle extends Column {
 
 	/**
-	 * outLeft und outRight enthalten die Werte, die nach den lokalen
-	 * Iterationsschritten an die Nachbarspalten abgegeben werden und 
-	 * werden zu Beginn eines globalen Iterationsschritts geleert.
+	 * outLeft und outRight enthalten die Werte, die nach den lokalen Iterationsschritten an die Nachbarspalten abgegeben werden und  werden zu Beginn eines globalen 
+	 * Iterationsschritts geleert.
 	 */
 	
 	private Hashtable<Integer, Double> outLeft;	
@@ -42,6 +45,13 @@ public class Middle extends Column {
 		}
 	}
 	
+	/**
+	 * Berechnet den akku und den horizontalen outflow knotenweise. Der horizontale Flow wird nach jeder lokalen Iteration mit Exchange getauscht und dann werden 
+	 * die values mit computeNewValues() neu berechnet. Die Arbeit mit dem Akku findet in localIteration() statt.
+	 * 
+	 * @return die Information, ob Konvergenz erreicht ist, nicht erreicht ist, oder ob ein Zyklus vorliegt.
+	 */
+	
 	@Override
 	public synchronized Integer call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
@@ -58,6 +68,13 @@ public class Middle extends Column {
 		return ret;
 		
 	}
+	
+	/**
+	 * Exchange.exchange blockiert einen Thread solange, bis der exchange Partner auf der anderen Seite exchange.exchange aufgerufen hat. (S.Javadocs: 
+	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html)
+	 * Um einen Deadlock zu vermeiden tauscht eine ungerade Spalte zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine gerade Spalte erst mit ihrem rechten, 
+	 * dann mit ihrem linken Partner.
+	 */
 	
 	@Override
 	protected void exchange(){
@@ -76,6 +93,13 @@ public class Middle extends Column {
 				e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * Berechnet mit einer For- Schleife den vertikalen wie horizontalen Flow. Der Flow in jede Richtung wird mit setAndComputeOutflow(...) ermittelt. Der vertikale Flow wird 
+	 * auf die Akku- Positonen des oberen und unteren Nachbarn gerechnet, der Flow nach rechts wird in outRight zwischen gespeichert und spaeter mit Exchange nach rechts ueber-
+	 * geben. In jedem lokalten Iterationsschritt wird der Wert von values neu berechnet mit value(i) = value(i) - outflow(gesamt) + inflow(vertikal). 
+	 * Falls vertikale Konvergenz erreicht sein sollte, wird die Schleife abgebrochen. 
+	 **/
 	
 	@Override
 	public void localIteration(){
@@ -104,15 +128,16 @@ public class Middle extends Column {
 
 			}//while schleife zu
 
-			if(addAccuToValuesAndLocalConvergence(akku, values)){
-
-				//grid.lab.setBreak(i);
+			if(addAccuToValuesAndLocalConvergence(akku, values))
 				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-			}
 		}//for schleife zu
-		//if(i==localIterations)
-			//grid.lab.setNoBreak(i);
 	}
+	
+	/**
+	 * Diese Methode verwendet die sequentielle Loesung. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow 
+	 * 
+	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
+	 */
 	
 	@Override
 	public double serialSigma(){
@@ -125,10 +150,13 @@ public class Middle extends Column {
 		return sigma;
 	}
 	
+	/**
+	 *verrechnet inflow und akku mit den alten values.
+	 */
+	
 	@Override
 	public synchronized void computeNewValues() {
 		
-		/**verrechnet inflow und akku mit den alten values.**/
 		if(me>0){
 			Iterator<Entry<Integer, Double>> left = outLeft.entrySet().iterator();
 			while(left.hasNext()){
