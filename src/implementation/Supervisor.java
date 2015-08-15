@@ -29,14 +29,11 @@ public class Supervisor {
 	 * Berechnung nicht zu ungenau wird.
 	 */
 	private int maxLocal;
-
-	private int grain = 0; //grain schritte bis epsilon TODO funktioniert noch nicht richtig.
 	
 	public Supervisor(GraphInfo graph) {
 		this.exe = Executors.newFixedThreadPool(graph.width);
 		this.gInfo=graph;
 		this.grid = new Grid(gInfo, exe);	
-		grid.setEpsilon(1.0);
 		grid.setLocals(1);
 		this.numLocalIterations = 1;
 		this.maxLocal = graph.width*graph.height*7;
@@ -59,7 +56,6 @@ public class Supervisor {
 	public synchronized Grid computeOsmose() {
 
 		boolean converged = false;
-		int exp = grain;
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
@@ -74,29 +70,14 @@ public class Supervisor {
 		}
 		
 		//int i=0, j=0;
-		grid.setEpsilon(Math.pow(10, exp));
 
 		// ab jetzt wir numLocalIterations nur noch verringert
 		while(!converged){
-			
 			//if(i++ >= 1000){
 			//	i=0; gInfo.write2File("./zwischenergebnis"+ j++ +".txt", grid);
 			//}
 			
-			grid.setLocals(numLocalIterations);
 			converged = grid.globalIteration();
-			if(converged){
-				System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
-				if(exp>0) {
-					numLocalIterations = (int)((double)numLocalIterations * ((double)exp/(double)(exp+1)));
-					exp--;
-					grid.setEpsilon(Math.pow(10, exp));
-					converged = false;	
-				} else {
-					break;
-				}
-			
-			}
 		}
 		
 		exe.shutdown();
@@ -105,7 +86,6 @@ public class Supervisor {
 		Sequentiell seq = new Sequentiell(grid);
 
 		//grid.lab.print();
-		System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		return seq.computeOsmose();
 	}
 
