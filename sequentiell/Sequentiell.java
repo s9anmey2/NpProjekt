@@ -41,7 +41,7 @@ public class Sequentiell {
 	 * 
 	 * @return Grid
 	 */
-	public synchronized Grid compute() {
+	public synchronized Grid computeOsmose() {
 		System.out.println("Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		boolean converged = false;
 
