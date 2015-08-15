@@ -34,7 +34,9 @@ public class Grid implements ImageConvertible {
 	 * 
 	 * @param graph
 	 */
-	public Grid(GraphInfo graph) {
+	private double rem;
+	private int counter;
+	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
 		makeColumns();
 	}
@@ -62,19 +64,27 @@ public class Grid implements ImageConvertible {
 	 * 
 	 * @return TODO beschreiben
 	 */
-	public synchronized int globalIteration() {
-		int converged = 0; // TODO gescheid kommentieren wenn fertig.
+	public synchronized boolean globalIteration() {
+		double dummy = 0.0;
 		try {
 			Collection<Column> tasks = columns.values();
-			List<Future<Integer>> rets = exe.invokeAll(tasks);
-
-			for (Future<Integer> col : rets)
-				converged = converged + col.get();
-		} catch (Exception e) {
+			List<Future<Double>> rets =  exe.invokeAll(tasks);
+			for(Future<Double> col: rets)
+				 dummy = col.get() + dummy;
+			
+		}catch (Exception e){
 			System.out.println(":/");
-			return 0;
+			return true;
+		}		
+		if(counter++ >= 10000){
+			counter = 0;
+			if(dummy < rem)
+				rem = dummy;
+			else
+				return true;
 		}
-		return converged;
+		
+		return dummy<=(graph.epsilon*graph.epsilon);
 	}
 
 	/**

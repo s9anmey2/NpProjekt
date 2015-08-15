@@ -41,8 +41,8 @@ public class RightBorder extends Column {
 	 */
 	
 	@Override
-	public synchronized Integer call() {
-		int ret;
+	public synchronized Double call() {
+		double ret;
 		if(values.size()!=0)
 			localIteration();
 		
@@ -97,14 +97,9 @@ public class RightBorder extends Column {
 
 			}//while schleife zu
 			
-			if(addAccuToValuesAndLocalConvergence(akku, values)){
-
-				//grid.lab.setBreak(i);
+			if(addAccuToValuesAndLocalConvergence(akku, values))
 				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-			}
 		}//for schleife zu
-		//if(i==localIterations)
-			//grid.lab.setNoBreak(i);
 	}
 
 	@Override

@@ -44,13 +44,16 @@ public class LeftBorder extends Column {
 	 */
 	
 	@Override
-	public synchronized Integer call() {
+	public synchronized Double call() {
+		double ret;
 
 		if(values.size()!=0)
 			localIteration();
+		Hashtable<Integer, Double> rightAccu = outRight;
 		exchange();
+		ret = getDelta(rightAccu, outRight);
 		computeNewValues();
-		return 0;
+		return ret;
 		
 	}
 	

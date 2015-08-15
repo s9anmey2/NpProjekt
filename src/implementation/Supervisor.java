@@ -53,22 +53,14 @@ public class Supervisor {
 	 * @return Grid welches ImageConvertible implementiert.
 	 */
 	public synchronized Grid computeOsmose() {
+		boolean converged = false;
 
-		/*
-		 * converged gibt an ob das System schon lokal konvergiert ist, also ob
-		 * für alle Übergänge zwischen den Spalten gilt: Flow nach rechts ~ Flow
-		 * nach links Kriterium für die Konvergenz ist:
-		 */
-		int converged = 1;
-
-		/*
-		 * numLocalIterations wächst von eins bis maxLocal (sofern keine
-		 * Konvergenz erreicht ist) um die werte schneller zu verteilen.
-		 */
-		while (!(converged == 0)) { // bleibt in der Schleife solnag gilt:
-									// epsilon<delta, delta/previousdelta>1.0001
+		// numLocalIterations wächst von eins bis maxLocal (sofern keine
+		// Konvergenz erreicht ist) um die werte schneller zu verteilen
+		while(!(converged)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
 			converged = grid.globalIteration();
-			if ((converged == 0) || numLocalIterations >= maxLocal) {
+
+			if((converged) || numLocalIterations >= maxLocal ){
 				break;
 			}
 			numLocalIterations++;
@@ -79,10 +71,21 @@ public class Supervisor {
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert.
 		 */
-		while (!(converged == 0)) {
 			// TODO hier muessen wir die Anzahl der localen Iterationen
 			// veraendern, falls converged < -1!!
+		// ab jetzt wir numLocalIterations nur noch verringert
+		while(!(converged) && numLocalIterations != 1){
+			/**hier muessen wir die Anzahl der localen Iterationen veraendern, falls converged < -1!!**/
 			converged = grid.globalIteration();
+
+			if(converged){
+				if(numLocalIterations/10 > 0)
+					numLocalIterations = numLocalIterations/2;
+				else
+					numLocalIterations--;
+				grid.setLocals(numLocalIterations);
+				converged = false;
+			}
 		}
 
 		exe.shutdown();
@@ -92,6 +95,7 @@ public class Supervisor {
 		 * Konvergenzkriterium zu prüfen und eventuell die globale Konvergenz
 		 * noch zu erreichen.
 		 */
+		// zum Schluss noch die sequentielle Ausführung
 		Sequentiell seq = new Sequentiell(grid);
 
 		// TODO entfernen: grid.lab.print();

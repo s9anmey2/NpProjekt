@@ -14,7 +14,7 @@ import np2015.GraphInfo;
  *  Das Gitter in Spalten zu unterteilen, die parallel bearbeitet werden, bedingt zwei Randfaelle. Um diese abzufangen organisieren wir die Menge aller Spalten
  *  in einer Klassenhierarchie, mit 3 Kindern,  von denen eines den linken, eines den rechten Rand implementiert und das dritte den allgemeinen Fall.
  *  **/
-abstract public class Column implements Callable<Integer>{
+abstract public class Column implements Callable<Double>{
 	
 	/**
 	 * values enthält die aktuellen Werte der Spalte.
@@ -35,7 +35,6 @@ abstract public class Column implements Callable<Integer>{
 	protected Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
 	protected int me, localIterations;
 	protected double epsilon;
-	private double previousDelta = 0.0;
 	
 	public Column(GraphInfo graph, Grid grid, int y) {
 
@@ -58,17 +57,9 @@ abstract public class Column implements Callable<Integer>{
 			
 		}
 	}
-/**-------------------------KONSTRUKTOR ENDE--------------------------------------------------------------------------------------------------------------
- * 
- * 
- * 
- * 
- * 
- * 
- * 																																							**/
 	
 	@Override
-	abstract public Integer call();
+	abstract public Double call();
 	
 	abstract protected void exchange();
 	
@@ -102,26 +93,27 @@ abstract public class Column implements Callable<Integer>{
 		return sigma <= epsilon;
 	}
 	
-	synchronized protected int getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
-		/**Konvergenz (delta<= epsilon) -> return 0; (delta/previousDelta<=treshold) -> return -1; else 1
-		 * 
+	synchronized protected double getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
+		/**		   
 		 * Der Sinn dahinter ist: falls das Verhalten des Prozesses mit einer bestimmten lokalen Iterationszahl 
 		 * zyklisch ist, dann ist das Verhältnis delta: previousDelta <1, weshalb die Schrittzahl geaendert werden muss.**/
-
+		
 		double delta = 0.0;
-		double ratio = 0.0;
 			for (int j = 0; j<graph.height; j++){
 				double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
 				delta= val*val + delta;
 			}
-		if(delta != 0.0 && previousDelta != 0.0){
-			if(delta != 0.0)
-				 ratio = delta/previousDelta;
-				if(ratio<=epsilon)
-					return 0;
-				if(ratio<=1.0001)
-					return -1;
-		}return 1;
+		return delta;
+	}
+	
+	synchronized protected double getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft, 
+												Hashtable<Integer, Double> rightAccu, Hashtable<Integer, Double> outRight){
+		double delta = 0.0; 
+			for(int j = 0; j<graph.height; j++){
+				double val = (leftAccu.getOrDefault(j, 0.0) + rightAccu.getOrDefault(j, 0.0)) - (outLeft.getOrDefault(j,0.0) + outRight.getOrDefault(j, 0.0));
+				delta = val*val + delta;
+			}
+		return delta;
 	}
 	
 	protected double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){

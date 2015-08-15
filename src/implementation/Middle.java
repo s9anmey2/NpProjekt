@@ -38,10 +38,10 @@ public class Middle extends Column {
 		
 		this.rates = new double[graph.height][4];
 		for(int i=0; i<graph.height; i++){
-			this.rates[i][Neighbor.Left.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Left); 
-			this.rates[i][Neighbor.Top.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Top);
-			this.rates[i][Neighbor.Right.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Right);
-			this.rates[i][Neighbor.Bottom.ordinal()] = graph.getRateForTarget(me, i, Neighbor.Bottom);
+			this.rates[i][0] = graph.getRateForTarget(me, i, Neighbor.Left); 
+			this.rates[i][2] = graph.getRateForTarget(me, i, Neighbor.Top);
+			this.rates[i][1] = graph.getRateForTarget(me, i, Neighbor.Right);
+			this.rates[i][3] = graph.getRateForTarget(me, i, Neighbor.Bottom);
 		}
 	}
 	
@@ -53,17 +53,18 @@ public class Middle extends Column {
 	 */
 	
 	@Override
-	public synchronized Integer call() {
+	public synchronized Double call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
-		int ret;
+		double ret;
 
 		if(values.size()!=0)
 			localIteration();
 
+		Hashtable<Integer, Double> rightAccu = outRight;
 		Hashtable<Integer, Double> leftAccu = outLeft;
+		
 		exchange();
-		ret = getDelta(leftAccu, outLeft);
-
+		ret = getDelta(leftAccu, outLeft, rightAccu, outRight);
 		computeNewValues();
 		return ret;
 		
@@ -117,7 +118,6 @@ public class Middle extends Column {
 				double val = dummy.getValue();
 				int currentPos = dummy.getKey();
 				
-	
 				 val = -(setAndComputeOutflow(akku, val, currentPos-1, rates[currentPos][Neighbor.Top.ordinal()])
 						+setAndComputeOutflow(akku, val, currentPos+1, rates[currentPos][Neighbor.Bottom.ordinal()])
 						+setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
