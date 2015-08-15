@@ -55,7 +55,7 @@ public class Supervisor {
 	 */
 	public synchronized Grid computeOsmose() {
 
-		int converged = 0;
+		int converged = 1;
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
