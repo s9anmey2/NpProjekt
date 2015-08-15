@@ -91,8 +91,11 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public synchronized void setEpsilonSchlange(double factor){
+		System.out.println("alte epsilonSchlange: " +  epsilonSchlange + "		epsilon:" + graph.epsilon + "	factor: " + factor);
 		epsilonSchlange = graph.epsilon * factor;
+		System.out.println("Zwischenergebnis Schlange " + epsilonSchlange);
 		epsilonSchlange = epsilonSchlange*epsilonSchlange/graph.width;
+		System.out.println("neue epsilonSchlange: " +  epsilonSchlange + "		epsilon:" + graph.epsilon);
 	}
 	
 	public double getEpsilonSchlange(){

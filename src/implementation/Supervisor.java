@@ -30,7 +30,7 @@ public class Supervisor {
 	 */
 	private int maxLocal;
 
-	private int grain = 10; //grain schritte bis epsilon TODO funktioniert noch nicht richtig.
+	private int grain = 5; //grain schritte bis epsilon TODO funktioniert noch nicht richtig.
 	
 	public Supervisor(GraphInfo graph) {
 		this.exe = Executors.newFixedThreadPool(graph.width);
