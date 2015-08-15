@@ -18,7 +18,7 @@ public class RightBorder extends Column {
 	public RightBorder(GraphInfo graph, Grid grid, int y,
 			Exchanger<Hashtable<Integer, Double>> left) {
 		super(graph, grid, y);
-		this.outLeft = new Hashtable<>();
+		this.outLeft = new Hashtable<>(graph.height, 1);
 		this.left = left;
 		
 		this.rates = new double[graph.height][3];
@@ -57,10 +57,10 @@ public class RightBorder extends Column {
 	@Override
 	public void localIteration(){
 		
-		outLeft = new Hashtable<>();
+		outLeft = new Hashtable<>(graph.height, 1);
 		int i = 0;
 		for (i=0; i<localIterations; i++){
-			akku = new Hashtable<>();
+			akku = new Hashtable<>(graph.height, 1);
 			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
 			while(knoten.hasNext()){
 				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
@@ -80,12 +80,12 @@ public class RightBorder extends Column {
 			}//while schleife zu
 			
 			if(addAccuToValuesAndLocalConvergence(akku, values)){
-				grid.lab.setBreak(i);
+				//grid.lab.setBreak(i);
 				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 			}
 		}//for schleife zu
-		if(i==localIterations)
-			grid.lab.setNoBreak(i);
+		//if(i==localIterations)
+			//grid.lab.setNoBreak(i);
 	}
 
 	@Override

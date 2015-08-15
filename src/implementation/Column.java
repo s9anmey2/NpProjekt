@@ -39,8 +39,8 @@ abstract public class Column implements Callable<Boolean>{
 		/**aufgerufen von grid "echte" spalte.**/
 		this.graph = graph;
 		this.grid = grid;
-		this.values = new Hashtable<>();
-		this.akku = new Hashtable<>();
+		this.values = new Hashtable<>(graph.height, 1);
+		this.akku = new Hashtable<>(graph.height, 1);
 		this.me = y; //y ist die spaltennummer
 	
 		HashMap<Integer, Double> name = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());

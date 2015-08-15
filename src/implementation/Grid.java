@@ -16,24 +16,23 @@ import np2015.GraphInfo;
 import np2015.ImageConvertible;
 
 public class Grid implements ImageConvertible {
-	public Lab lab;
+	//public Lab lab;
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
 	private ExecutorService exe;
 	
 	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>();
 		
 		/**der konstruktor baut die spalten.**/		
 		makeColumns();
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
-		this.lab = new Lab();
+		//this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>();		
+		this.columns = new Hashtable<Integer, Column>(graph.width, 1);		
 		/**der konstruktor baut die spalten.**/
 		makeColumns();
 	}
