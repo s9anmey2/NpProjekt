@@ -79,12 +79,12 @@ public class LeftBorder extends Column {
 			}//while schleife zu
 			
 			if(addAccuToValuesAndLocalConvergence(akku, values)){
-				grid.lab.setBreak(i);
+	//			grid.lab.setBreak(i);
 				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
 			}
 		}//for schleife zu
-		if(i==localIterations)
-			grid.lab.setNoBreak(i);
+//		if(i==localIterations)
+//			grid.lab.setNoBreak(i);
 	}
 
 	@Override

@@ -16,7 +16,7 @@ import np2015.GraphInfo;
 import np2015.ImageConvertible;
 
 public class Grid implements ImageConvertible {
-	public Lab lab;
+	//public Lab lab;
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
 	private ExecutorService exe;
@@ -30,7 +30,7 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
-		this.lab = new Lab();
+	//	this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();		
@@ -57,7 +57,7 @@ public class Grid implements ImageConvertible {
 		return converged;
 	}
 
-	private synchronized void exchange(int i){
+	private synchronized void exchange(int i){//benutzt nur der sequentielle Teil
 		Column left = columns.get(i);
 		Column right = columns.get(i+1);
 		Hashtable<Integer, Double> dummyRight = left.getRight();	
