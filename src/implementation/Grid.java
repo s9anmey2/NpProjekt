@@ -57,14 +57,6 @@ public class Grid implements ImageConvertible {
 		return converged;
 	}
 
-	private synchronized void exchange(int i){//benutzt nur der sequentielle Teil
-		Column left = columns.get(i);
-		Column right = columns.get(i+1);
-		Hashtable<Integer, Double> dummyRight = left.getRight();	
-		left.setRight(right.getLeft());
-		right.setLeft(dummyRight);
-	}
-
 	private void makeColumns(){
 		Exchanger<Hashtable<Integer,Double>> left, right;
 		
@@ -85,20 +77,11 @@ public class Grid implements ImageConvertible {
 		return columns.get(i);
 	}
 	
-	public synchronized void setEpsilon(double factor){
-		double epsilonSchlange = graph.epsilon * factor;
-		epsilonSchlange = epsilonSchlange*epsilonSchlange/graph.width;
-		Collection<Column> set= columns.values();
-		
-		for(Column col: set)
-			col.setEpsilon(epsilonSchlange);		
-	}
-	
 	public synchronized void setLocals(int n){
 		Collection<Column> set= columns.values();
 		for(Column col: set)
 			col.setLocals(n);
-
+			
 	}
 	
 	@Override
@@ -132,7 +115,14 @@ public class Grid implements ImageConvertible {
 
 		return sigma < (eps);
 	}
-	
+
+	private synchronized void exchange(int i){//benutzt nur der sequentielle Teil
+		Column left = columns.get(i);
+		Column right = columns.get(i+1);
+		Hashtable<Integer, Double> dummyRight = left.getRight();	
+		left.setRight(right.getLeft());
+		right.setLeft(dummyRight);
+	}
 	/*HILSMETHODE ZUM TESTEN
 	 * public double getSum(){
 		Iterator<Entry<Integer, Column>> col = columns.entrySet().iterator();
