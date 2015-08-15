@@ -39,7 +39,7 @@ public class Supervisor {
 		this.grid = new Grid(gInfo, exe);	
 		
 		this.numLocalIterations = 1;
-		this.maxLocal = graph.width*graph.height;
+		this.maxLocal = graph.width*graph.height*7;
 	}
 	
 	/**
@@ -60,7 +60,6 @@ public class Supervisor {
 
 		boolean converged = false;
 		int exp = grain;
-		
 		grid.setEpsilonSchlange(1);
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
@@ -104,6 +103,8 @@ public class Supervisor {
 		
 		// zum Schluss noch die sequentielle Ausführung
 		Sequentiell seq = new Sequentiell(grid);
+		grid.lab.print();
+		System.out.println("Converged " + exp + ": " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		return seq.computeOsmose();
 	}
 

@@ -16,15 +16,10 @@ import np2015.GraphInfo;
 import np2015.ImageConvertible;
 
 public class Grid implements ImageConvertible {
-	
+	public Lab lab;
 	private Hashtable<Integer, Column> columns;			// Kein Zugriff von außen
 	private GraphInfo graph;
 	private ExecutorService exe;
-	private double epsilonSchlange;
-	private volatile int localIterations; /**Der supervisor gibt dem grid die anzahl der localen schritte, damit sich die co,lumns diese dort abholen koennen.
-	Dazu gibt das Grid dann eine referenz auf sich selbst an die columns mit**/
-	/**wird mit dem aktuellen GraphInfo Objekt initialisiert und reicht dieses nach unten an die Columns weiter.**/
-
 	
 	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
 		this.graph = graph;
@@ -35,7 +30,7 @@ public class Grid implements ImageConvertible {
 	}
 	
 	public Grid(GraphInfo graph, ExecutorService exe){//Konstruktor fuer die nebenlauefige Loesung
-
+		this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>();		
@@ -90,29 +85,20 @@ public class Grid implements ImageConvertible {
 		return columns.get(i);
 	}
 	
-	public synchronized void setEpsilonSchlange(double factor){
-		System.out.println("alte epsilonSchlange: " +  epsilonSchlange + "		epsilon:" + graph.epsilon + "	factor: " + factor);
-		epsilonSchlange = graph.epsilon * factor;
-		System.out.println("Zwischenergebnis Schlange " + epsilonSchlange);
+	public synchronized void setCrits(double factor, int n){
+		double epsilonSchlange = graph.epsilon * factor;
 		epsilonSchlange = epsilonSchlange*epsilonSchlange/graph.width;
-		System.out.println("neue epsilonSchlange: " +  epsilonSchlange + "		epsilon:" + graph.epsilon);
-	}
-	
-	public double getEpsilonSchlange(){
-		return epsilonSchlange;
+		Collection<Column> set= columns.values();
+		
+		for(Column col: set){
+			col.setEpsilon(epsilonSchlange);
+			col.setLocals(n);
+		}
 	}
 	
 	@Override
 	public double getValueAt(int column, int row) {
 		return (columns.containsKey(column)) ? columns.get(column).getValue(row): 0.0;
-	}
-	
-	public synchronized void setLocals(int i){
-		localIterations = i;
-	}
-	
-	public int getLocals(){
-		return localIterations;
 	}
 	
 	public boolean serialComputation(){

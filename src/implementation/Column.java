@@ -31,7 +31,8 @@ abstract public class Column implements Callable<Boolean>{
 	 */
 	protected GraphInfo graph;		
 	protected Grid grid; /**ueber das grid kommt die column mit grid.getLOcals an die locale schrittzahl ran.**/
-	protected int me;
+	protected int me, localIterations;
+	protected double epsilon;
 	
 	public Column(GraphInfo graph, Grid grid, int y) {
 
@@ -39,7 +40,6 @@ abstract public class Column implements Callable<Boolean>{
 		this.graph = graph;
 		this.grid = grid;
 		this.values = new Hashtable<>();
-
 		this.akku = new Hashtable<>();
 		this.me = y; //y ist die spaltennummer
 	
@@ -95,7 +95,7 @@ abstract public class Column implements Callable<Boolean>{
 			addOrReplaceEntry(values, pos, values.getOrDefault(pos,0.0) + val);
 		}//while schleife zu
 
-		return sigma <= grid.getEpsilonSchlange();
+		return sigma <= epsilon;
 	}
 	
 	synchronized protected boolean getDelta(Hashtable<Integer, Double> leftAccu, Hashtable<Integer, Double> outLeft){
@@ -107,7 +107,8 @@ abstract public class Column implements Callable<Boolean>{
 			}
 		/*if(delta != 0.0)
 			System.out.println("Delta: " + delta + " Ratio: " + previousDelta/delta + " invoke by " + me);*/
-		return  delta <= grid.getEpsilonSchlange();
+				
+		return  delta <= epsilon;
 	}
 	
 	protected double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int currentPos, double rate){
@@ -128,7 +129,13 @@ abstract public class Column implements Callable<Boolean>{
 			map.put(key, val);
 	}
 	
-
+	public synchronized void setEpsilon(double x){
+		epsilon = x;
+	}
+	
+	synchronized public void setLocals(int n){
+		localIterations = n;
+	}
 	
 	public synchronized double getValue(int row){
 		return values.getOrDefault(row, 0.0);
