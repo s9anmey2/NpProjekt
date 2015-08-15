@@ -85,15 +85,20 @@ public class Grid implements ImageConvertible {
 		return columns.get(i);
 	}
 	
-	public synchronized void setCrits(double factor, int n){
+	public synchronized void setEpsilon(double factor){
 		double epsilonSchlange = graph.epsilon * factor;
 		epsilonSchlange = epsilonSchlange*epsilonSchlange/graph.width;
 		Collection<Column> set= columns.values();
 		
-		for(Column col: set){
-			col.setEpsilon(epsilonSchlange);
+		for(Column col: set)
+			col.setEpsilon(epsilonSchlange);		
+	}
+	
+	public synchronized void setLocals(int n){
+		Collection<Column> set= columns.values();
+		for(Column col: set)
 			col.setLocals(n);
-		}
+
 	}
 	
 	@Override

@@ -36,7 +36,8 @@ public class Supervisor {
 		this.exe = Executors.newFixedThreadPool(graph.width);
 		this.gInfo=graph;
 		this.grid = new Grid(gInfo, exe);	
-		
+		grid.setEpsilon(1.0);
+		grid.setLocals(1);
 		this.numLocalIterations = 1;
 		this.maxLocal = graph.width*graph.height*7;
 	}
@@ -59,21 +60,21 @@ public class Supervisor {
 
 		boolean converged = false;
 		int exp = grain;
-		grid.setEpsilonSchlange(1);
 
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
 		while(!converged){
-			grid.setLocals(numLocalIterations);
 			converged = grid.globalIteration();
 			if(converged || numLocalIterations >= maxLocal ){
 				break;
 			}
 			numLocalIterations++;
+			grid.setLocals(numLocalIterations);
+
 		}
 		
 		//int i=0, j=0;
-		grid.setEpsilonSchlange(Math.pow(10, exp));
+		grid.setEpsilon(Math.pow(10, exp));
 
 		// ab jetzt wir numLocalIterations nur noch verringert
 		while(!converged){
@@ -89,7 +90,7 @@ public class Supervisor {
 				if(exp>0) {
 					numLocalIterations = (int)((double)numLocalIterations * ((double)exp/(double)(exp+1)));
 					exp--;
-					grid.setEpsilonSchlange(Math.pow(10, exp));
+					grid.setEpsilon(Math.pow(10, exp));
 					converged = false;	
 				} else {
 					break;
