@@ -58,9 +58,8 @@ public class RightBorder extends Column {
 	public void localIteration(){
 		
 		outLeft = new Hashtable<>();
-		int localIterations = grid.getLocals();
-
-		for (int i=0; i<localIterations; i++){
+		int i = 0;
+		for (i=0; i<localIterations; i++){
 			akku = new Hashtable<>();
 			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
 			while(knoten.hasNext()){
@@ -80,9 +79,13 @@ public class RightBorder extends Column {
 
 			}//while schleife zu
 			
-			if(addAccuToValuesAndLocalConvergence(akku, values))
-				break;// falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
-		}//for schleife// zu
+			if(addAccuToValuesAndLocalConvergence(akku, values)){
+				grid.lab.setBreak(i);
+				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+			}
+		}//for schleife zu
+		if(i==localIterations)
+			grid.lab.setNoBreak(i);
 	}
 
 	@Override
@@ -128,6 +131,6 @@ public class RightBorder extends Column {
 	@Override
 	public void setRight(Hashtable<Integer, Double> left) {
 		return;
-	}
+	}	
 
 }
