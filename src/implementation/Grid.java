@@ -31,7 +31,7 @@ public class Grid implements ImageConvertible {
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
 	 * mitgegebenen GraphInfo Objekt den Initialen Wert ausliest. Dieser
 	 * Konstruktor ist für die sequentielle Lösung gedacht. Soll nebenläufig
-	 * gearbeitet werden, so muss zusätzlich ein EcecutorService übergeben
+	 * gearbeitet werden, so muss zusätzlich ein ExecutorService übergeben
 	 * werden.
 	 * 
 	 * @param graph

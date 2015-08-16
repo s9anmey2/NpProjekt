@@ -27,7 +27,16 @@ public class Supervisor {
 	private int numLocalIterations;
 	/*
 	 * maxLocal ist die obere Schranke von numLocalIterations, damit die
-	 * Berechnung nicht zu ungenau wird.
+	 * Berechnung nicht zu ungenau wird. Ist der Wert zu hoch, kann es
+	 * vorkommen, dass sich ein Gleichgewicht des vertikalen Flows einstellt und
+	 * Rechenzeit verloren geht, ohne dass noch Aenderungen erreicht werden. Um
+	 * diesen Fall prinzipiell auszuschließen, ist als weitere Abbruchbedingung
+	 * ein vertikal-lokales Konvergenzkriterium implementiert, dass geprueft
+	 * wird. Die lokale Iteration bricht ab, wenn es erreicht ist. Wann genau
+	 * dieses Gleichgewicht erreicht ist, ließ sich nur esperimentell
+	 * abschätzen. Es hat sich ergeben, dass maxLocal = 7*weite*hoehe eine
+	 * gleichmaeßige Verteilung zwischen vollstaendigen Iterationen und
+	 * Abbruechen durch vertikale Konvergenz beguenstigt.
 	 */
 	private int maxLocal;
 
@@ -39,7 +48,7 @@ public class Supervisor {
 	 *            Verfügung stellt.
 	 */
 	public Supervisor(GraphInfo graph) {
-		this.exe = Executors.newFixedThreadPool(graph.width);
+		this.exe = Executors.newFixedThreadPool(graph.width); /**(s.http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html)*/
 		this.gInfo = graph;
 		this.grid = new Grid(gInfo, exe);
 		grid.setLocals(1);
@@ -49,8 +58,9 @@ public class Supervisor {
 
 	/**
 	 * Berechnet nebenläufig einen Osmoseprozess eines Gitters bis zur
-	 * Konvergenz. Dabei wird am Ende sequentiell ausgeführt um die globale
-	 * Konvergenz zu prüfen und gegebenenfalls noch zu erlangen.
+	 * Konvergenz. Ist Konvergenz oder ein Zyklus erreicht , wird die Zahl lokaler
+	 * Iterationschritte reduziert und weiter gerechnet. Ist die Schrittzahl ==
+	 * 1, wechselt der Supervisor vom nebenlauefigen in den sequentiellen Modus.
 	 * 
 	 * @return Grid Objekt (implementiert ImageConvertible)
 	 */
@@ -68,7 +78,7 @@ public class Supervisor {
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert. globalIteration
 		 * gibt true zurück, wenn Inflow ~ Outflow oder über die
-		 * Iterationsschritte hinweg keine Verbesserung mehr erziehlt wird. So
+		 * Iterationsschritte hinweg keine Verbesserung mehr erzielt wird. So
 		 * wird sichergestellt, dass bei Zyklen die Anzahl der lokalen
 		 * Iterationen verringert wird, was der Terminierung dient.
 		 */
