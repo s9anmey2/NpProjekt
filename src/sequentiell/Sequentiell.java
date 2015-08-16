@@ -5,6 +5,7 @@ import implementation.Grid;
 
 /**
  * Diese Klasse organisiert die sequentielle Ausführung eines Osmose Prozesses.
+ * Diese Klasse ist ein Monitor.
  */
 public class Sequentiell {
 
@@ -44,11 +45,9 @@ public class Sequentiell {
 	public synchronized Grid computeOsmose() {
 		System.out.println("Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 		boolean converged = false;
-
 		while (!(converged)) {
 			converged = grid.serialComputation();
 		}
-
 		return grid;
 	}
 

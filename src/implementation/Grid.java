@@ -2,10 +2,8 @@
 package implementation;
 
 import java.util.List;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -21,9 +19,11 @@ import np2015.ImageConvertible;
  */
 public class Grid implements ImageConvertible {
 	// TODO entfernen: public Lab lab;
-	private Hashtable<Integer, Column> columns;
+	private ArrayList<Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
+	private double rem;
+	private int counter;
 
 	/**
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
@@ -34,9 +34,7 @@ public class Grid implements ImageConvertible {
 	 * 
 	 * @param graph
 	 */
-	private double rem;
-	private int counter;
-	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
+	public Grid(GraphInfo graph){
 		this.graph = graph;
 		makeColumns();
 	}
@@ -54,8 +52,9 @@ public class Grid implements ImageConvertible {
 		// TODO entfernen: this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
-		this.columns = new Hashtable<Integer, Column>(graph.width, 1);
+		this.columns = new ArrayList<>(graph.width);
 		makeColumns();
+		rem = 1;
 	}
 
 	/**
@@ -67,8 +66,7 @@ public class Grid implements ImageConvertible {
 	public synchronized boolean globalIteration() {
 		double dummy = 0.0;
 		try {
-			Collection<Column> tasks = columns.values();
-			List<Future<Double>> rets =  exe.invokeAll(tasks);
+			List<Future<Double>> rets =  exe.invokeAll(columns);
 			for(Future<Double> col: rets)
 				 dummy = col.get() + dummy;
 			
@@ -83,10 +81,7 @@ public class Grid implements ImageConvertible {
 			else
 				return true;
 		}
-		
-		boolean ret =dummy<(graph.epsilon*graph.epsilon);
-		//System.out.println(ret);
-		return ret;
+		return dummy<(graph.epsilon*graph.epsilon);
 	}
 
 	/**
@@ -102,33 +97,28 @@ public class Grid implements ImageConvertible {
 		/*
 		 * führe auf allen Columns eine lokale Iteration aus:
 		 */
-		Iterator<Entry<Integer, Column>> spalten = columns.entrySet().iterator();
-		while (spalten.hasNext())
-			spalten.next().getValue().localIteration();
+		columns.forEach(column -> column.localIteration());
 
 		/*
 		 * tausche die den horizontalen Flow der Spalten aus:
 		 */
 		for (int i = 0; i < graph.width - 1; i++) {
-			if (columns.containsKey(i) && columns.containsKey(i + 1))
-				exchange(i);
+			exchange(i);
 		}
 
 		/*
 		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
-		 * Quadtate der Knotendifferenzen (serialSigma()) addiert
+		 * Quadtate der Knotendifferenzen (serialSigma()) addiert.
 		 */
-		spalten = columns.entrySet().iterator();
 		double sigma = 0.0;
-		while (spalten.hasNext())
-			sigma = sigma + spalten.next().getValue().serialSigma();
+		for (Column c : columns)
+			sigma = sigma + c.serialSigma();
 
 		/*
 		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte addiert.
 		 */
-		spalten = columns.entrySet().iterator();
-		while (spalten.hasNext())
-			spalten.next().getValue().computeNewValues();
+		for (Column c : columns)
+			c.computeNewValues();
 
 		/*
 		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
@@ -144,16 +134,16 @@ public class Grid implements ImageConvertible {
 		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
 
 		rightEx = new Exchanger<Hashtable<Integer, Double>>();
-		columns.put(0, new LeftBorder(graph, this, 0, rightEx));
+		columns.add(0, new LeftBorder(graph, this, 0, rightEx));
 
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
 			rightEx = new Exchanger<Hashtable<Integer, Double>>();
-			columns.put(i, new Middle(graph, this, i, leftEx, rightEx));
+			columns.add(i, new Middle(graph, this, i, leftEx, rightEx));
 		}
 		leftEx = rightEx;
 
-		columns.put(graph.width - 1, new RightBorder(graph, this, graph.width - 1, leftEx));
+		columns.add(graph.width - 1, new RightBorder(graph, this, graph.width - 1, leftEx));
 	}
 
 	/**
@@ -162,23 +152,22 @@ public class Grid implements ImageConvertible {
 	 * @param n
 	 */
 	public synchronized void setLocals(int n) {
-		Collection<Column> set = columns.values();
-		set.stream().parallel().forEach(column -> column.setLocals(n));
-
+		columns.forEach(column -> column.setLocals(n));
+		//Collection<Column> set = columns.values();
+		//set.stream().parallel().forEach(column -> column.setLocals(n));
 	}
 
 	@Override
 	public synchronized double getValueAt(int column, int row) {
-		return (columns.containsKey(column)) ? columns.get(column).getValue(row) : 0.0;
+		return columns.get(column).getValue(row);
 	}
 
 	/**
-	 * Taucht den Outflow im falle der sequentiellen Ausführung.
+	 * Taucht den Outflow im Falle der sequentiellen Ausführung.
 	 * 
 	 * @param i
 	 */
-	private synchronized void exchange(int i) {// benutzt nur der sequentielle
-												// Teil
+	private synchronized void exchange(int i) {
 		Column left = columns.get(i);
 		Column right = columns.get(i + 1);
 		Hashtable<Integer, Double> dummyRight = left.getRight();
