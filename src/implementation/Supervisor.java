@@ -35,6 +35,8 @@ public class Supervisor {
 	 * Erzeugt ein neues Supervisor Objekt.
 	 * 
 	 * @param graph
+	 *            GraphInfo Objekt, welches die initialen Werte und Raten zur
+	 *            Verfügung stellt.
 	 */
 	public Supervisor(GraphInfo graph) {
 		this.exe = Executors.newFixedThreadPool(graph.width);
@@ -50,28 +52,33 @@ public class Supervisor {
 	 * Konvergenz. Dabei wird am Ende sequentiell ausgeführt um die globale
 	 * Konvergenz zu prüfen und gegebenenfalls noch zu erlangen.
 	 * 
-	 * @return Grid welches ImageConvertible implementiert.
+	 * @return Grid Objekt (implementiert ImageConvertible)
 	 */
 	public synchronized Grid computeOsmose() {
 		boolean converged = false;
 
-		// numLocalIterations wächst von eins bis maxLocal (sofern keine
-		// Konvergenz erreicht ist) um die werte schneller zu verteilen
-		while((!converged) && ! (numLocalIterations >= maxLocal)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
-
+		/*
+		 * numLocalIterations wächst von eins bis maxLocal (sofern keine
+		 * Konvergenz erreicht ist) um die Werte schneller zu verteilen.
+		 */
+		while ((!converged) && !(numLocalIterations >= maxLocal)) {
 			converged = grid.globalIteration();
 			numLocalIterations++;
 			grid.setLocals(numLocalIterations);
 		}
 
 		/*
-		 * Ab jetzt wird numLocalIteration nur noch verringert.
+		 * Ab jetzt wird numLocalIteration nur noch verringert. globalIteration
+		 * gibt true zurück, wenn Inflow ~ Outflow oder über die
+		 * Iterationsschritte hinweg keine Verbesserung mehr erziehlt wird. So
+		 * wird sichergestellt, dass bei Zyklen die Anzahl der lokalen
+		 * Iterationen verringert wird, was der Terminierung dient.
 		 */
-		while(numLocalIterations > 1){
-			while(!converged){
-				converged = grid.globalIteration();		
+		while (numLocalIterations > 1) {
+			while (!converged) {
+				converged = grid.globalIteration();
 			}
-			numLocalIterations = numLocalIterations/2;
+			numLocalIterations = numLocalIterations / 2;
 			grid.setLocals(numLocalIterations);
 			converged = false;
 		}
@@ -84,8 +91,6 @@ public class Supervisor {
 		 * noch zu erreichen.
 		 */
 		Sequentiell seq = new Sequentiell(grid);
-
-		// TODO entfernen: grid.lab.print();
 		return seq.computeOsmose();
 	}
 

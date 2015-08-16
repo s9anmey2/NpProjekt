@@ -19,6 +19,8 @@ public class Sequentiell {
 	 * Gitter.
 	 * 
 	 * @param graph
+	 *            GraphInfo Objekt, welches die initialen Werte und Raten zur
+	 *            Verfügung stellt.
 	 */
 	public Sequentiell(GraphInfo graph) {
 		this.grid = new Grid(graph);
@@ -30,6 +32,7 @@ public class Sequentiell {
 	 * Grid weiter gerechnet werden kann.
 	 * 
 	 * @param grid
+	 *            Grid Objekt
 	 */
 	public Sequentiell(Grid grid) {
 		this.grid = grid;
@@ -40,10 +43,11 @@ public class Sequentiell {
 	 * Berechnet sequentiell einen Osmoseprozess eines Gitters bis zur
 	 * Konvergenz.
 	 * 
-	 * @return Grid
+	 * @return Grid Objekt (implementiert ImageConvertible)
 	 */
 	public synchronized Grid computeOsmose() {
-		System.out.println("Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
+		System.out.println(
+				"Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date()));
 		boolean converged = false;
 		while (!(converged)) {
 			converged = grid.serialComputation();
