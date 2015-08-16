@@ -58,6 +58,7 @@ public class Supervisor {
 		// numLocalIterations wächst von eins bis maxLocal (sofern keine
 		// Konvergenz erreicht ist) um die werte schneller zu verteilen
 		while((!converged) && ! (numLocalIterations >= maxLocal)){	//bleibt in der Schleife solnag gilt: epsilon<delta, delta/previousdelta>1.0001
+
 			converged = grid.globalIteration();
 			numLocalIterations++;
 			grid.setLocals(numLocalIterations);
@@ -66,7 +67,11 @@ public class Supervisor {
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert.
 		 */
+		System.out.println(numLocalIterations);
+
 		while(numLocalIterations > 1){
+			System.out.println("zweite: " + numLocalIterations);
+
 			while(!converged){
 				converged = grid.globalIteration();		
 			}
@@ -74,7 +79,10 @@ public class Supervisor {
 			System.out.println(new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
 
 			numLocalIterations = numLocalIterations/2;
+			System.out.println(numLocalIterations);
+
 			grid.setLocals(numLocalIterations);
+			System.out.println(numLocalIterations);
 			converged = false;
 		}
 
