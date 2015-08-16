@@ -14,18 +14,18 @@ import sequentiell.Sequentiell;
 public class Supervisor {
 
 	private final GraphInfo gInfo;
-	/**
+	/*
 	 * Gitter auf dem gearbeitet wird.
 	 */
 	private final Grid grid;
 	private final ExecutorService exe;
-	/**
+	/*
 	 * numLocalIterations ist die aktuelle Anzahl der lokalen Iterationen, die
 	 * in einer Spalte intern berechnet werden sollen. Wird diese geändert, wird
 	 * sie auch im Grid gesetzt.
 	 */
 	private int numLocalIterations;
-	/**
+	/*
 	 * maxLocal ist die obere Schranke von numLocalIterations, damit die
 	 * Berechnung nicht zu ungenau wird.
 	 */
@@ -56,7 +56,6 @@ public class Supervisor {
 	 */
 	public synchronized Grid computeOsmose() {
 		boolean converged = false;
-
 		/*
 		 * numLocalIterations wächst von eins bis maxLocal (sofern keine
 		 * Konvergenz erreicht ist) um die Werte schneller zu verteilen.
@@ -66,7 +65,6 @@ public class Supervisor {
 			numLocalIterations++;
 			grid.setLocals(numLocalIterations);
 		}
-
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert. globalIteration
 		 * gibt true zurück, wenn Inflow ~ Outflow oder über die
@@ -82,9 +80,11 @@ public class Supervisor {
 			grid.setLocals(numLocalIterations);
 			converged = false;
 		}
-
+		/*
+		 * Im sequentiellen Teil wird der ExecutorService nicht mehr benötigt,
+		 * daher kann er nun beendet werden.
+		 */
 		exe.shutdown();
-
 		/*
 		 * Zum Schluss noch die sequentielle Ausführung um das globale
 		 * Konvergenzkriterium zu prüfen und eventuell die globale Konvergenz

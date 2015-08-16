@@ -14,14 +14,16 @@ import np2015.ImageConvertible;
 /**
  * Das Grid stellt das Gitter bestehend aus Columns dar. Es stellt Methoden zur
  * nebenläufigen und sequentiellen Berechnung eines Osmoseprozesses auf dem
- * Gitter zur Verfügung.
- * Grid ist ein Monitor.
+ * Gitter zur Verfügung. Grid ist ein Monitor.
  */
 public class Grid implements ImageConvertible {
-	// TODO entfernen: public Lab lab;
 	private ArrayList<Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
+	/*
+	 * Um Terminierung sicher zu stellen wird sich in rem ein Vergleichswert
+	 * gemerkt, der regelmäßig (mit counter) auf Verbesserung geprüft wird.
+	 */
 	private double rem;
 	private int counter;
 
@@ -33,8 +35,10 @@ public class Grid implements ImageConvertible {
 	 * werden.
 	 * 
 	 * @param graph
+	 *            GraphInfo Objekt, welches die initialen Werte und Raten zur
+	 *            Verfügung stellt.
 	 */
-	public Grid(GraphInfo graph){
+	public Grid(GraphInfo graph) {
 		this.graph = graph;
 		makeColumns();
 	}
@@ -46,10 +50,13 @@ public class Grid implements ImageConvertible {
 	 * gearbeitet werden, so kann auf den EcecutorService verzichtet werden.
 	 * 
 	 * @param graph
+	 *            GraphInfo Objekt, welches die initialen Werte und Raten zur
+	 *            Verfügung stellt.
 	 * @param exe
+	 *            Der ExecuterService wird in globalIteration benutzt und muss
+	 *            vom Aufrufer beendet werden, wenn er nicht mehr benötigt wird.
 	 */
 	public Grid(GraphInfo graph, ExecutorService exe) {
-		// TODO entfernen: this.lab = new Lab();
 		this.exe = exe;
 		this.graph = graph;
 		this.columns = new ArrayList<>(graph.width);
@@ -61,27 +68,48 @@ public class Grid implements ImageConvertible {
 	 * Die Methode globalIteration führt nebenläufig für allen Spalten eine,
 	 * zuvor durch setLokals gesetzte, Anzahl von lokalen Iterationen durch.
 	 * 
-	 * @return TODO beschreiben
+	 * @return Gibt true zurück, wenn Inflow ~ Outflow gilt oder über die
+	 *         Aufrufe dieser Methode hinweg keine Verbesserung (im Sinne von
+	 *         Annäherung an das Konvergenzkriterium) erziehlt wird.
 	 */
 	public synchronized boolean globalIteration() {
-		double dummy = 0.0;
+		/*
+		 * sum enthält die Summe der Knotendifferenzen bezüglich den
+		 * horizontalen Flows.
+		 */
+		double sum = 0.0;
+		/*
+		 * Nun sollen die lokalen Iterationen auf allen Spalten nebenläufig
+		 * berechnet werden, dazu werden die Spalten dem ExecutorService
+		 * übergeben, welcher dies dann erledigt. invokeAll kehrt erst dann
+		 * zurück, wenn alle Tasks erledigt sind.
+		 */
 		try {
-			List<Future<Double>> rets =  exe.invokeAll(columns);
-			for(Future<Double> col: rets)
-				 dummy = col.get() + dummy;
-			
-		}catch (Exception e){
+			List<Future<Double>> rets = exe.invokeAll(columns);
+			for (Future<Double> col : rets)
+				sum = col.get() + sum;
+
+		} catch (Exception e) {
 			System.out.println(":/");
 			return true;
-		}		
-		if(counter++ >= 10000){
+		}
+		/*
+		 * Alle 10000 Aufrufe dieser Methode wird auf Annäherung an das
+		 * Konvergenzkriterium geprüft. Ist keine Verbesserung feststellbar,
+		 * wird true zurückgegeben.
+		 */
+		if (counter++ >= 10000) {
 			counter = 0;
-			if(dummy < rem)
-				rem = dummy;
+			if (sum < rem)
+				rem = sum;
 			else
 				return true;
 		}
-		return dummy<(graph.epsilon*graph.epsilon);
+		/*
+		 * Im Normalfall wird zurückgegeben, ob die Wertdifferenzen bezüglich
+		 * des horizontalen Flows schon das Konvergenzkriterium erfüllen.
+		 */
+		return sum < (graph.epsilon * graph.epsilon);
 	}
 
 	/**
@@ -93,33 +121,28 @@ public class Grid implements ImageConvertible {
 	 */
 	public synchronized boolean serialComputation() {
 		double eps = graph.epsilon * graph.epsilon;
-
 		/*
 		 * führe auf allen Columns eine lokale Iteration aus:
 		 */
 		columns.forEach(column -> column.localIteration());
-
 		/*
 		 * tausche die den horizontalen Flow der Spalten aus:
 		 */
 		for (int i = 0; i < graph.width - 1; i++) {
 			exchange(i);
 		}
-
 		/*
 		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
-		 * Quadtate der Knotendifferenzen (serialSigma()) addiert.
+		 * Quadtate der Knotendifferenzen der Spalen (serialSigma()) addiert.
 		 */
 		double sigma = 0.0;
 		for (Column c : columns)
 			sigma = sigma + c.serialSigma();
-
 		/*
 		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte addiert.
 		 */
 		for (Column c : columns)
 			c.computeNewValues();
-
 		/*
 		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
 		 * Quadtate der Knotendifferenzen < Quadtat von Epsilon
@@ -132,17 +155,14 @@ public class Grid implements ImageConvertible {
 	 */
 	private synchronized void makeColumns() {
 		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
-
 		rightEx = new Exchanger<Hashtable<Integer, Double>>();
 		columns.add(0, new LeftBorder(graph, this, 0, rightEx));
-
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
 			rightEx = new Exchanger<Hashtable<Integer, Double>>();
 			columns.add(i, new Middle(graph, this, i, leftEx, rightEx));
 		}
 		leftEx = rightEx;
-
 		columns.add(graph.width - 1, new RightBorder(graph, this, graph.width - 1, leftEx));
 	}
 
@@ -150,11 +170,12 @@ public class Grid implements ImageConvertible {
 	 * Setzt die Anzahl der lokalen Iterationen.
 	 * 
 	 * @param n
+	 *            Anzahl der lokalen Iterationen
 	 */
 	public synchronized void setLocals(int n) {
 		columns.forEach(column -> column.setLocals(n));
-		//Collection<Column> set = columns.values();
-		//set.stream().parallel().forEach(column -> column.setLocals(n));
+		// Collection<Column> set = columns.values();
+		// set.stream().parallel().forEach(column -> column.setLocals(n));
 	}
 
 	@Override
@@ -166,6 +187,7 @@ public class Grid implements ImageConvertible {
 	 * Taucht den Outflow im Falle der sequentiellen Ausführung.
 	 * 
 	 * @param i
+	 *            Index der linken Spalte
 	 */
 	private synchronized void exchange(int i) {
 		Column left = columns.get(i);

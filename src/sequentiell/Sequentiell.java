@@ -9,7 +9,7 @@ import implementation.Grid;
  */
 public class Sequentiell {
 
-	/**
+	/*
 	 * Gitter auf dem gearbeitet wird.
 	 */
 	private Grid grid;
