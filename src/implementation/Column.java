@@ -100,7 +100,7 @@ abstract public class Column implements Callable<Double>{
 		
 		double delta = 0.0;
 			for (int j = 0; j<graph.height; j++){
-				double val = leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0);
+				double val = (leftAccu.getOrDefault(j, 0.0) - outLeft.getOrDefault(j, 0.0));
 				delta= val*val + delta;
 			}
 		return delta;
@@ -110,7 +110,7 @@ abstract public class Column implements Callable<Double>{
 												Hashtable<Integer, Double> rightAccu, Hashtable<Integer, Double> outRight){
 		double delta = 0.0; 
 			for(int j = 0; j<graph.height; j++){
-				double val = (leftAccu.getOrDefault(j, 0.0) + rightAccu.getOrDefault(j, 0.0)) - (outLeft.getOrDefault(j,0.0) + outRight.getOrDefault(j, 0.0));
+				double val = ((leftAccu.getOrDefault(j, 0.0) + rightAccu.getOrDefault(j, 0.0)) - (outLeft.getOrDefault(j,0.0) + outRight.getOrDefault(j, 0.0)));
 				delta = val*val + delta;
 			}
 		return delta;

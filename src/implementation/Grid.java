@@ -84,7 +84,9 @@ public class Grid implements ImageConvertible {
 				return true;
 		}
 		
-		return dummy<=(graph.epsilon*graph.epsilon);
+		boolean ret =dummy<(graph.epsilon*graph.epsilon);
+		System.out.println(ret);
+		return ret;
 	}
 
 	/**
