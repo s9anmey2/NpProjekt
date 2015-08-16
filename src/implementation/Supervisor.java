@@ -48,7 +48,11 @@ public class Supervisor {
 	 *            Verfügung stellt.
 	 */
 	public Supervisor(GraphInfo graph) {
-		this.exe = Executors.newFixedThreadPool(graph.width); /**(s.http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html)*/
+		this.exe = Executors.newFixedThreadPool(
+				graph.width); /**
+								 * (s.http://docs.oracle.com/javase/7/docs/api/
+								 * java/util/concurrent/ExecutorService.html)
+								 */
 		this.gInfo = graph;
 		this.grid = new Grid(gInfo, exe);
 		grid.setLocals(1);
@@ -58,9 +62,10 @@ public class Supervisor {
 
 	/**
 	 * Berechnet nebenläufig einen Osmoseprozess eines Gitters bis zur
-	 * Konvergenz. Ist Konvergenz oder ein Zyklus erreicht , wird die Zahl lokaler
-	 * Iterationschritte reduziert und weiter gerechnet. Ist die Schrittzahl ==
-	 * 1, wechselt der Supervisor vom nebenlauefigen in den sequentiellen Modus.
+	 * Konvergenz. Ist Konvergenz oder ein Zyklus erreicht , wird die Zahl
+	 * lokaler Iterationschritte reduziert und weiter gerechnet. Ist die
+	 * Schrittzahl == 1, wechselt der Supervisor vom nebenlauefigen in den
+	 * sequentiellen Modus.
 	 * 
 	 * @return Grid Objekt (implementiert ImageConvertible)
 	 */

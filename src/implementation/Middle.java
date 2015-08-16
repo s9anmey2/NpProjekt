@@ -1,7 +1,6 @@
 package implementation;
 
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.Exchanger;
 
@@ -14,7 +13,7 @@ import np2015.Neighbor;
 
 public class Middle extends Column {
 
-	/**
+	/*
 	 * outLeft und outRight enthalten die Werte, die nach den lokalen
 	 * Iterationsschritten an die Nachbarspalten abgegeben werden und werden zu
 	 * Beginn eines globalen Iterationsschritts geleert.
@@ -22,7 +21,11 @@ public class Middle extends Column {
 	private Hashtable<Integer, Double> outLeft;
 	private Hashtable<Integer, Double> outRight;
 
-	private Exchanger<Hashtable<Integer, Double>> left, right;
+	private Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+	/*
+	 * Raten werden gespeicht, damit sie nicht immer neu berechnet werden
+	 * müssen.
+	 */
 	private double[][] rates;
 
 	public Middle(GraphInfo graph, int y, Exchanger<Hashtable<Integer, Double>> left,
@@ -31,8 +34,8 @@ public class Middle extends Column {
 
 		this.outRight = new Hashtable<>(graph.height, 1);
 		this.outLeft = new Hashtable<>(graph.height, 1);
-		this.left = left;
-		this.right = right;
+		this.leftEx = left;
+		this.rightEx = right;
 
 		this.rates = new double[graph.height][4];
 		for (int i = 0; i < graph.height; i++) {
@@ -44,43 +47,50 @@ public class Middle extends Column {
 	}
 
 	/**
-	 * Berechnet den akku und den horizontalen outflow knotenweise. Der
-	 * horizontale Flow wird nach jeder lokalen Iteration mit Exchange getauscht
-	 * und dann werden die values mit computeNewValues() neu berechnet. Die
-	 * Arbeit mit dem Akku findet in localIteration() statt.
+	 * Führt die lokalen Iterationen aus. Berechnet den akku und den
+	 * horizontalen outflow knotenweise. Der horizontale Flow wird nach jeder
+	 * lokalen Iteration mit Exchange getauscht und dann werden die values mit
+	 * computeNewValues() neu berechnet. Die Arbeit mit dem Akku findet in
+	 * localIteration() statt.
 	 * 
-	 * @return die Information, ob Konvergenz erreicht ist, nicht erreicht ist,
-	 *         oder ob ein Zyklus vorliegt.
+	 * @return Summe der Quadrate der Änderung der Knotenwerte über alle lokalen
+	 *         Iterationen bezüglich des horizontalen Flows.
 	 */
 	@Override
 	public synchronized Double call() {
-		/** berechnet den akku und den horizontalen outflow knotenweise. **/
-		double ret;
-
 		if (values.size() != 0)
 			localIteration();
-
+		/*
+		 * Zur Berechnung des Rückgabe Wertes sind sowohl Inflow als auch
+		 * Outflow nötig, also wird eine Referenz auf den Outflow
+		 * zwischengespeichert und dann werden die Outflows mit den
+		 * Nachbarspalten getauscht. Die Tables müssen nicht durch Locks
+		 * geschützt werden, da bis zum Austauschen alle Schreizugriffe
+		 * abgeschlossen sind und duch das blockierende Warten beim Austauschen
+		 * auch garantiert ist, dass nach dem Austauschen die Nachbarspalten
+		 * fertig mit den Schreibzugriffen sind. Nach dem Austauschen finden
+		 * dann nur noch Lesezugriffe auf die (eigenen und gemerkten)
+		 * Outflowtables statt und mit dem return werden die gemerkten
+		 * Referenzen wieder vergessen. Es gibt also keine Dataraces!
+		 */
 		Hashtable<Integer, Double> rightAccu = outRight;
 		Hashtable<Integer, Double> leftAccu = outLeft;
-
 		exchange();
-		ret = getDelta(leftAccu, outLeft, rightAccu, outRight);
+		double ret = getDelta(leftAccu, outLeft, rightAccu, outRight);
 		computeNewValues();
 		return ret;
-
 	}
 
 	@Override
-	protected void exchange() {
+	protected synchronized void exchange() {
 		try {
-			if (me % 2 == 0) { // grade erst nach links tauschen, ungerade erst
-								// nach rechts.
-				outLeft = left.exchange(outLeft);
-				outRight = right.exchange(outRight);
+			if (me % 2 == 0) {
+				outLeft = leftEx.exchange(outLeft);
+				outRight = rightEx.exchange(outRight);
 			} else {
 
-				outRight = right.exchange(outRight);
-				outLeft = left.exchange(outLeft);
+				outRight = rightEx.exchange(outRight);
+				outLeft = leftEx.exchange(outLeft);
 			}
 		} catch (InterruptedException e) {
 			System.out.println("Exchange failed :/");
@@ -89,45 +99,43 @@ public class Middle extends Column {
 	}
 
 	@Override
-	public void localIteration() {
+	public synchronized void localIteration() {
 		/*
-		 * zu Beginn jedes globalen Iterationsschrittes muessen die Akkus des
-		 * horizontalen Outflows auf 0 gesetzt werden
+		 * Vor den lokalen Iterationen muessen die horizontalen Outflows auf 0
+		 * gesetzt werden.
 		 */
 		outLeft = new Hashtable<>(height, 1);
 		outRight = new Hashtable<>(height, 1);
-		int i = 0;
-		for (i = 0; i < localIterations; i++) {
+		/*
+		 * Jetzt werden so viele lokale Iterationen ausgeführt wie in
+		 * localIterations steht.
+		 */
+		for (int i = 0; i < localIterations; i++) {
 			/*
-			 * zu Beginn jedes lokalen Iterationschrittes muss der Akku des
-			 * vertikalen Flows einer Spalte auf 0 gesetzt werden.
+			 * Zu Beginn des lokalen Iterationschrittes muss der Akku des
+			 * vertikalen Flows auf 0 gesetzt werden.
 			 */
 			akku = new Hashtable<>(height, 1);
-			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
-			while (knoten.hasNext()) {
-
-				Entry<Integer, Double> dummy = knoten.next();
-				double val = dummy.getValue();
-				int currentPos = dummy.getKey();
+			/*
+			 * Für jeden Knoten werden die Outflows berechnet und in den
+			 * entsprechenden Akkumulatoren hinzugefügt.
+			 */
+			for (Entry<Integer, Double> knoten : values.entrySet()) {
+				double val = knoten.getValue();
+				int currentPos = knoten.getKey();
 				/*
-				 * der outflow in jede Richtung wird berechnet. der berechnete
-				 * Wert wird in den Akkus der empfangenden Knoten abgelegt.
-				 * Dasuebernimmt die Methode setAndComputeValues. Die Summe des
-				 * outflows wird lokal gespeichert.
+				 * Der Outflow in jede Richtung wird berechnet. Der berechnete
+				 * Wert wird in den Akkus der empfangenden Knoten abgelegt (das
+				 * uebernimmt die Methode setAndComputeValues). Die Summe des
+				 * Outflows wird dann vom Akku abgezogen.
 				 */
 				val = -(setAndComputeOutflow(akku, val, currentPos - 1, rates[currentPos][Neighbor.Top.ordinal()])
 						+ setAndComputeOutflow(akku, val, currentPos + 1, rates[currentPos][Neighbor.Bottom.ordinal()])
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
-
-				/*
-				 * der akku eintrag des aktuellen Knotens wird um den
-				 * kumulierten Outflow ergaenzt.
-				 */
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos, 0.0) + val);
 
-			} // while schleife zu
-
+			}
 			/*
 			 * Am Ende jedes lokalen Iterationschrittes werden die Werte der
 			 * Knoten einer Spalte mit ihrem korrespondierenden Akku Eintrag
@@ -137,15 +145,11 @@ public class Middle extends Column {
 			 */
 			if (addAccuToValuesAndLocalConvergence(akku, values))
 				break;
-		} // for schleife zu
+		}
 	}
 
 	@Override
-	public double serialSigma() {
-		/**
-		 * fuer die sequentielle loesung wichtig. merkt sich in sigma die summe
-		 * der quadrate aus horizontalem und vertikalem outflow
-		 **/
+	public synchronized double serialSigma() {
 		double sigma = 0.0;
 		for (int i = 0; i < height; i++) {
 			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0) + outRight.getOrDefault(i, 0.0);
@@ -156,28 +160,22 @@ public class Middle extends Column {
 
 	@Override
 	public synchronized void computeNewValues() {
-
-			Iterator<Entry<Integer, Double>> left = outLeft.entrySet().iterator();
-			while (left.hasNext()) {
-				Entry<Integer, Double> dummy = left.next();
-				int pos = dummy.getKey();
-				double val = dummy.getValue();
-				addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
-			} // while zu
-
-			Iterator<Entry<Integer, Double>> right = outRight.entrySet().iterator();
-			while (right.hasNext()) {
-				Entry<Integer, Double> dummy = right.next();
-				int pos = dummy.getKey();
-				double val = dummy.getValue();
-				addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
-			} // while zu
-
+		for (Entry<Integer, Double> entry : outLeft.entrySet()) {
+			int pos = entry.getKey();
+			double val = entry.getValue();
+			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+		}
+		for (Entry<Integer, Double> entry : outRight.entrySet()) {
+			int pos = entry.getKey();
+			double val = entry.getValue();
+			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+		}
 	}
 
-	/**
-	 * Die setter und getter brauchen wir fuer den sequentiellen programmteil.
-	 **/
+	/*
+	 * Die Setter und Getter fuer den sequentiellen Programmteil.
+	 */
+
 	@Override
 	public synchronized Hashtable<Integer, Double> getLeft() {
 		return outLeft;

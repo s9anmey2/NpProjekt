@@ -2,7 +2,6 @@ package implementation;
 
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
@@ -11,6 +10,8 @@ import np2015.GraphInfo;
 /**
  * Die Klasse Column stellt eine Spalte eines Gitters dar und enthält Methoden,
  * welche die Berechnungen ausführen, die nur eine Spalte betreffen.
+ * 
+ * Alle Unterklassen sind Monitore.
  * 
  * Das Gitter in Spalten zu unterteilen, die parallel bearbeitet werden, bedingt
  * zwei Randfaelle. Um diese abzufangen organisieren wir die Menge aller Spalten
@@ -31,11 +32,9 @@ abstract public class Column implements Callable<Double> {
 	protected Hashtable<Integer, Double> akku;
 
 	/*
-	 * height ist die Höhe der Spalte (Höhe des Gitters).
-	 * LocalIterations wird
+	 * height ist die Höhe der Spalte (Höhe des Gitters). LocalIterations wird
 	 * vom Supervisor ueber das Grid immer dann gesetzt, wenn sich die Zahl
-	 * aendert. 
-	 * me ist Id der Spalte. (MittelSpalten muessen das wissen, die
+	 * aendert. me ist Id der Spalte. (MittelSpalten muessen das wissen, die
 	 * Raender wissen implizit wer sie sind. Trotzdem erhalten alle Kinder von
 	 * Column das Feld, weil es angenehmer zu programmieren und lesbarerer Code
 	 * ist, ueber eine Zeile mit ihrer Id zu sprechen als mit einem konkreten
@@ -88,13 +87,14 @@ abstract public class Column implements Callable<Double> {
 	abstract public Double call();
 
 	/**
-	 * Exchange.exchange blockiert einen Thread solange, bis der exchange
-	 * Partner auf der anderen Seite exchange.exchange aufgerufen hat.
+	 * Führt den Austausch den Outflows mit den Nachbarspalten aus. Benutzt wird
+	 * dazu Exchanger.exchange, dieses blockiert einen Thread solange, bis ein
+	 * Partner Exchanger.exchange auf dem gleichen Exchanger aufgerufen hat.
 	 * (S.Javadocs:
-	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html) Um
-	 * lange Warteketten zu vermeiden tauscht eine Spalte mit einer ungraden Id
-	 * zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine Spalte
-	 * mit einer graden Id erst mit ihrem linken, dann mit ihrem rechten
+	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html).
+	 * Um lange Warteketten zu vermeiden tauscht eine Spalte mit einer ungraden
+	 * Id zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine
+	 * Spalte mit einer graden Id erst mit ihrem linken, dann mit ihrem rechten
 	 * Partner.
 	 */
 	abstract protected void exchange();

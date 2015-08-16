@@ -47,9 +47,8 @@ public class Sequentiell {
 	 * @return Grid Objekt (implementiert ImageConvertible)
 	 */
 	public synchronized Grid computeOsmose() {
-		System.out.println("Sequentiell: "
-				+ new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss")
-						.format(new java.util.Date()));
+		System.out.println(
+				"Sequentiell: " + new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date()));
 		boolean converged = false;
 		while (!(converged)) {
 			converged = grid.serialComputation();
