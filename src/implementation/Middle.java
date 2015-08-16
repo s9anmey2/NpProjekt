@@ -51,7 +51,6 @@ public class Middle extends Column {
 	 * 
 	 * @return die Information, ob Konvergenz erreicht ist, nicht erreicht ist, oder ob ein Zyklus vorliegt.
 	 */
-	
 	@Override
 	public synchronized Double call() {
 		/**berechnet den akku und den horizontalen outflow knotenweise.**/
@@ -70,12 +69,7 @@ public class Middle extends Column {
 		
 	}
 	
-	/**
-	 * Exchange.exchange blockiert einen Thread solange, bis der exchange Partner auf der anderen Seite exchange.exchange aufgerufen hat. (S.Javadocs: 
-	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html)
-	 * Um einen Deadlock zu vermeiden tauscht eine ungerade Spalte zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine gerade Spalte erst mit ihrem rechten, 
-	 * dann mit ihrem linken Partner.
-	 */
+	
 	
 	@Override
 	protected void exchange(){
@@ -95,49 +89,41 @@ public class Middle extends Column {
 		}
 	}
 	
-	/**
-	 * Berechnet mit einer For- Schleife den vertikalen wie horizontalen Flow. Der Flow in jede Richtung wird mit setAndComputeOutflow(...) ermittelt. Der vertikale Flow wird 
-	 * auf die Akku- Positonen des oberen und unteren Nachbarn gerechnet, der Flow nach rechts wird in outRight zwischen gespeichert und spaeter mit Exchange nach rechts ueber-
-	 * geben. In jedem lokalten Iterationsschritt wird der Wert von values neu berechnet mit value(i) = value(i) - outflow(gesamt) + inflow(vertikal). 
-	 * Falls vertikale Konvergenz erreicht sein sollte, wird die Schleife abgebrochen. 
-	 **/
-	
+
 	@Override
 	public void localIteration(){
+		/*zu Beginn jedes globalen Iterationsschrittes muessen die Akkus des horizontalen Outflows auf 0 gesetzt werden*/
 		outLeft = new Hashtable<>(graph.height, 1);
 		outRight= new Hashtable<>(graph.height, 1);
 		int i = 0;
 		for (i=0; i<localIterations; i++){
-
+			/*zu Beginn jedes lokalen Iterationschrittes muss der Akku des vertikalen Flows einer Spalte auf 0 gesetzt werden.*/
 			akku = new Hashtable<>(graph.height, 1);
 			Iterator<Entry<Integer, Double>> knoten = values.entrySet().iterator();
 			while(knoten.hasNext()){
-				/** hier ist keine ordnung definiert, also muss immer mit geprueft werden, ob es an der Stelle schon einen Knoten gibt.**/
 				
 				Entry<Integer, Double> dummy= knoten.next();
 				double val = dummy.getValue();
 				int currentPos = dummy.getKey();
-				
+				/*der outflow in jede Richtung wird berechnet. der berechnete Wert wird in den Akkus der empfangenden Knoten abgelegt.
+				 * Dasuebernimmt die Methode setAndComputeValues. Die Summe des outflows wird lokal gespeichert. */
 				 val = -(setAndComputeOutflow(akku, val, currentPos-1, rates[currentPos][Neighbor.Top.ordinal()])
 						+setAndComputeOutflow(akku, val, currentPos+1, rates[currentPos][Neighbor.Bottom.ordinal()])
 						+setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
 				
-				/**der korrespondierende akku eintrag wird aktualisiert/angelegt. **/
+				/*der akku eintrag des aktuellen Knotens wird um den kumulierten Outflow ergaenzt. */
 				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos,0.0) + val);
 
 			}//while schleife zu
-
+			
+			/*Am Ende jedes lokalen Iterationschrittes werden die Werte der Knoten einer Spalte mit ihrem korrespondierenden Akku 
+			 Eintrag verrechnet. Erreicht der vertikale Flow ein Gleichgewicht, also erfuellt ein Konvergenzkriterium, bricht die 
+			 lokalte Iteration ab.*/
 			if(addAccuToValuesAndLocalConvergence(akku, values))
-				break; //falls lokale konvergenz erreicht ist, bricht die Forschleife ab.**/
+				break; 
 		}//for schleife zu
 	}
-	
-	/**
-	 * Diese Methode verwendet die sequentielle Loesung. merkt sich in sigma die summe der quadrate aus horizontalem und vertikalem outflow 
-	 * 
-	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
-	 */
 	
 	@Override
 	public double serialSigma(){
@@ -149,10 +135,6 @@ public class Middle extends Column {
 		}
 		return sigma;
 	}
-	
-	/**
-	 *verrechnet inflow und akku mit den alten values.
-	 */
 	
 	@Override
 	public synchronized void computeNewValues() {
