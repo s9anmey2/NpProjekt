@@ -15,63 +15,60 @@ import np2015.GraphInfo;
  * Das Gitter in Spalten zu unterteilen, die parallel bearbeitet werden, bedingt
  * zwei Randfaelle. Um diese abzufangen organisieren wir die Menge aller Spalten
  * in einer Klassenhierarchie, mit 3 Kindern, von denen eines den linken, eines
- * den rechten Rand implementiert und das dritte den allgemeinen Fall.
+ * den rechten Rand implementiert und das dritte die Mitte.
  **/
 abstract public class Column implements Callable<Double> {
 
-	/**
+	/*
 	 * values enthält die aktuellen Werte der Spalte.
 	 */
 	protected Hashtable<Integer, Double> values;
 
-	/**
+	/*
 	 * akku enthält die Werde des vertikalen Flows und wird zu Beginn jeden
 	 * lokalen Iterationsschritts geleert.
 	 */
 	protected Hashtable<Integer, Double> akku;
 
-	/**
-	 * Der graph erzaehlt einer Column, wie groß sie ist. LocalIterations wird
+	/*
+	 * height ist die Höhe der Spalte (Höhe des Gitters).
+	 * LocalIterations wird
 	 * vom Supervisor ueber das Grid immer dann gesetzt, wenn sich die Zahl
-	 * aendert. me ist id der Spalte. MittelSpalten muessen das wissen, die
+	 * aendert. 
+	 * me ist Id der Spalte. (MittelSpalten muessen das wissen, die
 	 * Raender wissen implizit wer sie sind. Trotzdem erhalten alle Kinder von
 	 * Column das Feld, weil es angenehmer zu programmieren und lesbarerer Code
 	 * ist, ueber eine Zeile mit ihrer Id zu sprechen als mit einem konkreten
-	 * Integer.
+	 * Integer.)
 	 */
-	protected GraphInfo graph;
-	protected Grid grid;
-	protected int me, localIterations;
+	protected int height, me, localIterations;
 
-	/**
+	/*
 	 * Das Konvergenzkriterium anhand dessen lokale, vertikale Konvergenz
 	 * gemessen wird.
-	 * **/
-	protected double epsilon;
+	 **/
+	protected double epsilonSquareDivWidth;
 
-	public Column(GraphInfo graph, Grid grid, int y) {
+	/**
+	 * @param graph
+	 * @param y
+	 */
+	public Column(GraphInfo graph, int y) {
 
-		this.graph = graph;
-		this.grid = grid;
+		this.height = graph.height;
 		this.values = new Hashtable<>(graph.height, 1);
 		this.akku = new Hashtable<>(graph.height, 1);
-		this.me = y; // y ist die spaltennummer/id
-		this.epsilon = graph.epsilon * graph.epsilon / graph.width;
+		this.me = y;
+		this.epsilonSquareDivWidth = graph.epsilon * graph.epsilon / graph.width;
 
 		/*
-		 * Alle a priori bekannten Werte werden vom Konstruktor in der Hashtable
-		 * Values gesetzt, dazu werden die Eintraege erschaffen
+		 * Alle initialen Werte werden vom Konstruktor in der Hashtable values
+		 * gesetzt, dazu werden die entsprechenden Eintraege erschaffen.
 		 */
-		HashMap<Integer, Double> name = graph.column2row2initialValue
-				.getOrDefault(y, new HashMap<>());
-		Iterator<Entry<Integer, Double>> iter = name.entrySet().iterator();
+		HashMap<Integer, Double> initialMap = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 
-		while (iter.hasNext()) {
-			Entry<Integer, Double> dummy = iter.next();
-			int row = dummy.getKey();
-			double val = dummy.getValue();
-			values.put(row, val);
-
+		for (Entry<Integer, Double> entry : initialMap.entrySet()) {
+			values.put(entry.getKey(), entry.getValue());
 		}
 	}
 
@@ -80,7 +77,9 @@ abstract public class Column implements Callable<Double> {
 	 * run() aber mit dem Unterschied, dass call() einen Rueckgabewert haben
 	 * kann.(S.http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/
 	 * Callable.html). Die Methode steuert den Arbeitsablauf des Prozesses und
-	 * wird vom Grid in jedem globalen Iterationsschritt aufgerufen.
+	 * wird vom Grid in jedem globalen Iterationsschritt aufgerufen. Hier werden
+	 * die lokalen Iterationen ausgeführt, danach der Outflow mit den
+	 * Nachbarspalen getauscht und die neuen Knotenwerte berechnet.
 	 * 
 	 * @return Das Quadrat des euklidischen Abstandes des horizontalen Flows aus
 	 *         einem bestimmten globalen Iterationschritt.
@@ -93,9 +92,10 @@ abstract public class Column implements Callable<Double> {
 	 * Partner auf der anderen Seite exchange.exchange aufgerufen hat.
 	 * (S.Javadocs:
 	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html) Um
-	 * einen Deadlock zu vermeiden tauscht eine ungerade Spalte zuerst mit ihrem
-	 * rechten Partner, dann mit ihrem linken und eine gerade Spalte erst mit
-	 * ihrem rechten, dann mit ihrem linken Partner.
+	 * lange Warteketten zu vermeiden tauscht eine Spalte mit einer ungraden Id
+	 * zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine Spalte
+	 * mit einer graden Id erst mit ihrem linken, dann mit ihrem rechten
+	 * Partner.
 	 */
 	abstract protected void exchange();
 
@@ -103,59 +103,51 @@ abstract public class Column implements Callable<Double> {
 	 * Berechnet mit einer For- Schleife den vertikalen wie horizontalen Flow.
 	 * Der Flow in jede Richtung wird mit setAndComputeOutflow(...) ermittelt.
 	 * Der vertikale Flow wird auf die Akku- Positonen des oberen und unteren
-	 * Nachbarn gerechnet, der Flow nach rechts wird in outRight
-	 * zwischengespeichert und spaeter mit Exchange nach rechts ueber- geben.
-	 * Nach jedem lokalen Iterationsschritt wird der Wert von values neu
-	 * berechnet mit value(i) = value(i) - outflow(gesamt) + inflow(vertikal).
-	 * Falls vertikale Konvergenz erreicht sein sollte, wird die Schleife
-	 * abgebrochen.
+	 * Nachbarn gerechnet, der Flow nach rechts und links wird akkumuliert und
+	 * spaeter mit den Nachbarspalten getauscht. Nach jedem lokalen
+	 * Iterationsschritt wird der Wert von values neu berechnet mit value(i) =
+	 * value(i) - outflow(gesamt) + inflow(vertikal). Falls vertikale Konvergenz
+	 * erreicht sein sollte, wird die Schleife abgebrochen um nicht unnötig viel
+	 * zu rechnen.
 	 **/
 	abstract public void localIteration();
 
 	/**
-	 * Diese Methode verwendet die sequentielle Loesung. merkt sich in sigma die
-	 * summe der quadrate aus horizontalem und vertikalem outflow
+	 * Diese Methode wird von der sequentielle Loesung verwendet. Hier wird die
+	 * Summe der Quadrate der Wertänderungen einer Spalte berechntet (dient dem
+	 * Überprüfen den globalen Konvergenz).
 	 * 
 	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
 	 */
 	abstract public double serialSigma();
 
 	/**
-	 * verrechnet den horizontalen inflow mit den den Werten der Knoten einer
+	 * Verrechnet den horizontalen Inflow mit den den Werten der Knoten einer
 	 * Spalte.
 	 */
 	abstract public void computeNewValues();
 
 	/**
-	 * Setter und Getter Anfang.
+	 * Die Methode addiert die Akkuwerte auf die Knotenwerte und bestimmt ob die
+	 * Spalte einen lokal konvergenten Zustand erreicht hat.
+	 * 
+	 * @param akku
+	 *            Hashtable mit den zu addierenden Werten
+	 * @param values
+	 *            Hashtable mit den Knotenwerten
+	 * @return true falls die Spalte einen lokal konvergenten Zustand erreicht
+	 *         hat
 	 */
-	abstract public Hashtable<Integer, Double> getLeft();
-
-	abstract public Hashtable<Integer, Double> getRight();
-
-	abstract public void setLeft(Hashtable<Integer, Double> right);
-
-	abstract public void setRight(Hashtable<Integer, Double> left);
-
-	/**
-	 * Setter und Getter Ende.
-	 */
-
-	synchronized protected boolean addAccuToValuesAndLocalConvergence(
-			Hashtable<Integer, Double> akku, Hashtable<Integer, Double> values) {
-		/** hier werden alle eintraege mit denen des akkus verechnet. **/
+	synchronized protected boolean addAccuToValuesAndLocalConvergence(Hashtable<Integer, Double> akku,
+			Hashtable<Integer, Double> values) {
 		double sigma = 0.0;
-		Iterator<Entry<Integer, Double>> acc = akku.entrySet().iterator();
-
-		while (acc.hasNext()) {
-			Entry<Integer, Double> dummy = acc.next();
-			int pos = dummy.getKey();
-			double val = dummy.getValue();
+		for (Entry<Integer, Double> entry : akku.entrySet()) {
+			int pos = entry.getKey();
+			double val = entry.getValue();
 			sigma = sigma + val * val;
 			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
-		} // while schleife zu
-
-		return sigma <= epsilon;
+		}
+		return sigma <= epsilonSquareDivWidth;
 	}
 
 	/**
@@ -163,7 +155,7 @@ abstract public class Column implements Callable<Double> {
 	 * Differenz des horizontalen Outflow/Inflow.
 	 * 
 	 * @param outflow
-	 *            Der outflow, den diese Spalte in einem bestimmten globalen
+	 *            Der Outflow, den diese Spalte in einem bestimmten globalen
 	 *            Iterationsschritt abgegeben hat.
 	 * @param inflow
 	 *            Der Inflow, den diese Spalte in demselben globalen
@@ -171,19 +163,10 @@ abstract public class Column implements Callable<Double> {
 	 * @return das Quadrat des euklidischen Abstandes zwischen Inflow, Outflow
 	 *         am Ende desselben globalen Iterationsschrittes.
 	 */
-	synchronized protected double getDelta(Hashtable<Integer, Double> outflow,
-			Hashtable<Integer, Double> inflow) {
-		/**
-		 * Der Sinn dahinter ist: falls das Verhalten des Prozesses mit einer
-		 * bestimmten lokalen Iterationszahl zyklisch ist, dann ist das
-		 * Verhältnis delta: previousDelta <1, weshalb die Schrittzahl geaendert
-		 * werden muss.
-		 **/
-
+	synchronized protected double getDelta(Hashtable<Integer, Double> outflow, Hashtable<Integer, Double> inflow) {
 		double delta = 0.0;
-		for (int j = 0; j < graph.height; j++) {
-			double val = (outflow.getOrDefault(j, 0.0) - inflow.getOrDefault(j,
-					0.0));
+		for (int j = 0; j < height; j++) {
+			double val = (outflow.getOrDefault(j, 0.0) - inflow.getOrDefault(j, 0.0));
 			delta = val * val + delta;
 		}
 		return delta;
@@ -194,60 +177,56 @@ abstract public class Column implements Callable<Double> {
 	 * der Differenz des horizontalen Outflow/Inflow.. Mit dieser Information
 	 * kann dann die globale Konvergenz abgeschaetzt werden.
 	 * 
-	 * @param leftAccu
+	 * @param outLeft
 	 *            der linke Outflow, den die Spalte in einem bestimmten globalen
 	 *            Iterationsschritt abegegeben hat.
-	 * @param outLeft
+	 * @param inLeft
 	 *            der linke Inflow der Spalte, den die Spalte in demselben
 	 *            globalen Iterationsschritt abegegeben hat.
-	 * @param rightAccu
+	 * @param outRight
 	 *            der rechte Outflow der Spalte, den die Spalte in demselben
 	 *            globalen Iterationsschritt abegegeben hat.
-	 * @param outRight
+	 * @param inRight
 	 *            der rechte Inflow der Spalte, den die Spalte in demselben
 	 *            globalen Iterationsschritt abegegeben hat.
 	 * @return die Summe der Quadrate des horizontalen Flows aller Knoten der
 	 *         Spalte.
 	 */
-	synchronized protected double getDelta(Hashtable<Integer, Double> leftAccu,
-			Hashtable<Integer, Double> outLeft,
-			Hashtable<Integer, Double> rightAccu,
-			Hashtable<Integer, Double> outRight) {
+	synchronized protected double getDelta(Hashtable<Integer, Double> outLeft, Hashtable<Integer, Double> inLeft,
+			Hashtable<Integer, Double> outRight, Hashtable<Integer, Double> inRight) {
 		double delta = 0.0;
-		for (int j = 0; j < graph.height; j++) {
-			double val = ((leftAccu.getOrDefault(j, 0.0) + rightAccu
-					.getOrDefault(j, 0.0)) - (outLeft.getOrDefault(j, 0.0) + outRight
-					.getOrDefault(j, 0.0)));
+		for (int j = 0; j < height; j++) {
+			double val = ((outLeft.getOrDefault(j, 0.0) + outRight.getOrDefault(j, 0.0))
+					- (inLeft.getOrDefault(j, 0.0) + inRight.getOrDefault(j, 0.0)));
 			delta = val * val + delta;
 		}
 		return delta;
 	}
 
 	/**
-	 * Die Methode berechnet den Outflow eines Knotens in eine Richtung.
+	 * Die Methode berechnet den Flow eines Knotens in eine Richtung und setzt
+	 * den Inflow.
 	 * 
 	 * @param map
-	 *            Enthaelt den Akku des Empfaenger des Outflows, wo dieser als
-	 *            Inflow gespeichert wird.
+	 *            Hashmap zu der der Inflow addiert werden soll.
 	 * @param val
-	 *            Der Wert des aufrufenden Knotens.
-	 * @param currentPos
-	 *            Die Position des Akku, an der der Inflow abgelegt werden muss.
+	 *            Der Wert des Knotens, von dem der Flow ausgeht.
+	 * @param position
+	 *            Die Position an der der Inflow addiert werden soll.
 	 * @param rate
 	 *            Die Abflussrate in eine bestimmte Richtung.
-	 * @return den Outflow, den der Aufrufer sich in seinem Akku merkt.
+	 * @return Absoluter Outflow, dieser wurde noch nicht gesetzt.
 	 */
-	protected double setAndComputeOutflow(Hashtable<Integer, Double> map,
-			double val, int currentPos, double rate) {
+	protected synchronized double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int position,
+			double rate) {
 		double ret = 0.0;
 		/*
-		 * falls die rate 0 ist oder der val 0 ist, aendert sich nichts, dann
-		 * muss auch nichts angepasst werden.
+		 * Falls rate oder val 0 ist, aendert sich der Wert in der Map nicht,
+		 * dann muss auch nichts angepasst werden.
 		 */
 		if (rate != 0.0 && val != 0.0) {
 			ret = val * rate;
-			addOrReplaceEntry(map, currentPos,
-					map.getOrDefault(currentPos, 0.0) + ret);
+			addOrReplaceEntry(map, position, map.getOrDefault(position, 0.0) + ret);
 		}
 		return ret;
 	}
@@ -261,11 +240,9 @@ abstract public class Column implements Callable<Double> {
 	 * @param key
 	 *            Die Position die neu angelegt oder überschrieben werden soll.
 	 * @param val
-	 *            Der Wert der dort zu speicher ist.
+	 *            Der Wert der dort zu speichern ist.
 	 */
-	protected synchronized void addOrReplaceEntry(
-			Hashtable<Integer, Double> map, int key, double val) {
-
+	protected synchronized void addOrReplaceEntry(Hashtable<Integer, Double> map, int key, double val) {
 		if (map.containsKey(key))
 			map.replace(key, val);
 		else if (val != 0)
@@ -295,4 +272,15 @@ abstract public class Column implements Callable<Double> {
 		return values.getOrDefault(row, 0.0);
 	}
 
+	/*
+	 * Setter und Getter
+	 */
+
+	abstract public Hashtable<Integer, Double> getLeft();
+
+	abstract public Hashtable<Integer, Double> getRight();
+
+	abstract public void setLeft(Hashtable<Integer, Double> right);
+
+	abstract public void setRight(Hashtable<Integer, Double> left);
 }

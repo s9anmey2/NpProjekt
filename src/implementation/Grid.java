@@ -156,14 +156,14 @@ public class Grid implements ImageConvertible {
 	private synchronized void makeColumns() {
 		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
 		rightEx = new Exchanger<Hashtable<Integer, Double>>();
-		columns.add(0, new LeftBorder(graph, this, 0, rightEx));
+		columns.add(0, new LeftBorder(graph, 0, rightEx));
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
 			rightEx = new Exchanger<Hashtable<Integer, Double>>();
-			columns.add(i, new Middle(graph, this, i, leftEx, rightEx));
+			columns.add(i, new Middle(graph, i, leftEx, rightEx));
 		}
 		leftEx = rightEx;
-		columns.add(graph.width - 1, new RightBorder(graph, this, graph.width - 1, leftEx));
+		columns.add(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
 	}
 
 	/**
