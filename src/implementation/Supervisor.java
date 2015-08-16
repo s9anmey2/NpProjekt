@@ -67,19 +67,12 @@ public class Supervisor {
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert.
 		 */
-		System.out.println(numLocalIterations);
-
 		while(numLocalIterations > 1){
-			System.out.println("zweite: " + numLocalIterations);
-
 			while(!converged){
 				converged = grid.globalIteration();		
 			}
 			numLocalIterations = numLocalIterations/2;
-			System.out.println(numLocalIterations);
-
 			grid.setLocals(numLocalIterations);
-			System.out.println(numLocalIterations);
 			converged = false;
 		}
 
