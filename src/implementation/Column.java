@@ -145,7 +145,7 @@ abstract public class Column implements Callable<Double> {
 			int pos = entry.getKey();
 			double val = entry.getValue();
 			sigma = sigma + val * val;
-			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
 		}
 		return sigma <= epsilonSquareDivWidth;
 	}
@@ -226,27 +226,9 @@ abstract public class Column implements Callable<Double> {
 		 */
 		if (rate != 0.0 && val != 0.0) {
 			ret = val * rate;
-			addOrReplaceEntry(map, position, map.getOrDefault(position, 0.0) + ret);
+			map.put(position, map.getOrDefault(position, 0.0) + ret);
 		}
 		return ret;
-	}
-
-	/**
-	 * Fuegt in einem Akku oder einer Spalte Eintraege hinzu oder ersetzt
-	 * vorhandene Eintraege durch neue.
-	 * 
-	 * @param map
-	 *            Der zu manipulierende Hashtable.
-	 * @param key
-	 *            Die Position die neu angelegt oder überschrieben werden soll.
-	 * @param val
-	 *            Der Wert der dort zu speichern ist.
-	 */
-	protected synchronized void addOrReplaceEntry(Hashtable<Integer, Double> map, int key, double val) {
-		if (map.containsKey(key))
-			map.replace(key, val);
-		else if (val != 0)
-			map.put(key, val);
 	}
 
 	/**

@@ -133,7 +133,7 @@ public class Middle extends Column {
 						+ setAndComputeOutflow(akku, val, currentPos + 1, rates[currentPos][Neighbor.Bottom.ordinal()])
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
-				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos, 0.0) + val);
+				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
 
 			}
 			/*
@@ -163,12 +163,12 @@ public class Middle extends Column {
 		for (Entry<Integer, Double> entry : outLeft.entrySet()) {
 			int pos = entry.getKey();
 			double val = entry.getValue();
-			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
 		}
 		for (Entry<Integer, Double> entry : outRight.entrySet()) {
 			int pos = entry.getKey();
 			double val = entry.getValue();
-			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
 		}
 	}
 

@@ -117,7 +117,7 @@ public class LeftBorder extends Column {
 				val = -(setAndComputeOutflow(akku, val, currentPos - 1, rates[currentPos][0])
 						+ setAndComputeOutflow(akku, val, currentPos + 1, rates[currentPos][2])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][1]));
-				addOrReplaceEntry(akku, currentPos, akku.getOrDefault(currentPos, 0.0) + val);
+				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
 			}
 			/*
 			 * Am Ende jedes lokalen Iterationschrittes werden die Werte der
@@ -146,7 +146,7 @@ public class LeftBorder extends Column {
 		for (Entry<Integer, Double> entry : outRight.entrySet()) {
 			int pos = entry.getKey();
 			double val = entry.getValue();
-			addOrReplaceEntry(values, pos, values.getOrDefault(pos, 0.0) + val);
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
 		}
 	}
 
