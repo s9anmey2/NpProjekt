@@ -70,9 +70,6 @@ public class Supervisor {
 			while(!converged){
 				converged = grid.globalIteration();		
 			}
-			System.out.println("In While: " + converged);
-			System.out.println(new java.text.SimpleDateFormat("dd.MM.yyyy HH.mm.ss").format(new java.util.Date())); 
-
 			numLocalIterations = numLocalIterations/2;
 			grid.setLocals(numLocalIterations);
 			converged = false;

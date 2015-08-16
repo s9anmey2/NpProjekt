@@ -24,6 +24,8 @@ public class Grid implements ImageConvertible {
 	private Hashtable<Integer, Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
+	private double rem;
+	private int counter;
 
 	/**
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
@@ -34,9 +36,7 @@ public class Grid implements ImageConvertible {
 	 * 
 	 * @param graph
 	 */
-	private double rem;
-	private int counter;
-	public Grid(GraphInfo graph){ //2. Konstruktor fuer sequentielle Loesung
+	public Grid(GraphInfo graph){
 		this.graph = graph;
 		makeColumns();
 	}
@@ -56,6 +56,7 @@ public class Grid implements ImageConvertible {
 		this.graph = graph;
 		this.columns = new Hashtable<Integer, Column>(graph.width, 1);
 		makeColumns();
+		rem = 1;
 	}
 
 	/**
@@ -83,10 +84,7 @@ public class Grid implements ImageConvertible {
 			else
 				return true;
 		}
-		
-		boolean ret =dummy<(graph.epsilon*graph.epsilon);
-		System.out.println(ret);
-		return ret;
+		return dummy<(graph.epsilon*graph.epsilon);
 	}
 
 	/**
@@ -110,13 +108,12 @@ public class Grid implements ImageConvertible {
 		 * tausche die den horizontalen Flow der Spalten aus:
 		 */
 		for (int i = 0; i < graph.width - 1; i++) {
-			if (columns.containsKey(i) && columns.containsKey(i + 1))
-				exchange(i);
+			exchange(i);
 		}
 
 		/*
 		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
-		 * Quadtate der Knotendifferenzen (serialSigma()) addiert
+		 * Quadtate der Knotendifferenzen (serialSigma()) addiert.
 		 */
 		spalten = columns.entrySet().iterator();
 		double sigma = 0.0;
