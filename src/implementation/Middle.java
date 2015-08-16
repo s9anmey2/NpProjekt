@@ -82,23 +82,6 @@ public class Middle extends Column {
 	}
 
 	@Override
-	protected synchronized void exchange() {
-		try {
-			if (me % 2 == 0) {
-				outLeft = leftEx.exchange(outLeft);
-				outRight = rightEx.exchange(outRight);
-			} else {
-
-				outRight = rightEx.exchange(outRight);
-				outLeft = leftEx.exchange(outLeft);
-			}
-		} catch (InterruptedException e) {
-			System.out.println("Exchange failed :/");
-			e.printStackTrace();
-		}
-	}
-
-	@Override
 	public synchronized void localIteration() {
 		/*
 		 * Vor den lokalen Iterationen muessen die horizontalen Outflows auf 0
@@ -134,7 +117,7 @@ public class Middle extends Column {
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
 				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
-
+	
 			}
 			/*
 			 * Am Ende jedes lokalen Iterationschrittes werden die Werte der
@@ -146,16 +129,6 @@ public class Middle extends Column {
 			if (addAccuToValuesAndLocalConvergence(akku, values))
 				break;
 		}
-	}
-
-	@Override
-	public synchronized double serialSigma() {
-		double sigma = 0.0;
-		for (int i = 0; i < height; i++) {
-			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0) + outRight.getOrDefault(i, 0.0);
-			sigma = sigma + val * val;
-		}
-		return sigma;
 	}
 
 	@Override
@@ -171,6 +144,35 @@ public class Middle extends Column {
 			values.put(pos, values.getOrDefault(pos, 0.0) + val);
 		}
 	}
+
+	@Override
+	protected synchronized void exchange() {
+		try {
+			if (me % 2 == 0) {
+				outLeft = leftEx.exchange(outLeft);
+				outRight = rightEx.exchange(outRight);
+			} else {
+
+				outRight = rightEx.exchange(outRight);
+				outLeft = leftEx.exchange(outLeft);
+			}
+		} catch (InterruptedException e) {
+			System.out.println("Exchange failed :/");
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public synchronized double serialSigma() {
+		double sigma = 0.0;
+		for (int i = 0; i < height; i++) {
+			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0) + outRight.getOrDefault(i, 0.0);
+			sigma = sigma + val * val;
+		}
+		return sigma;
+	}
+
+	
 
 	/*
 	 * Die Setter und Getter fuer den sequentiellen Programmteil.

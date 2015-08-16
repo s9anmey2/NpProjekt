@@ -87,19 +87,6 @@ abstract public class Column implements Callable<Double> {
 	abstract public Double call();
 
 	/**
-	 * Führt den Austausch den Outflows mit den Nachbarspalten aus. Benutzt wird
-	 * dazu Exchanger.exchange, dieses blockiert einen Thread solange, bis ein
-	 * Partner Exchanger.exchange auf dem gleichen Exchanger aufgerufen hat.
-	 * (S.Javadocs:
-	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html).
-	 * Um lange Warteketten zu vermeiden tauscht eine Spalte mit einer ungraden
-	 * Id zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine
-	 * Spalte mit einer graden Id erst mit ihrem linken, dann mit ihrem rechten
-	 * Partner.
-	 */
-	abstract protected void exchange();
-
-	/**
 	 * Berechnet mit einer For- Schleife den vertikalen wie horizontalen Flow.
 	 * Der Flow in jede Richtung wird mit setAndComputeOutflow(...) ermittelt.
 	 * Der vertikale Flow wird auf die Akku- Positonen des oberen und unteren
@@ -113,42 +100,23 @@ abstract public class Column implements Callable<Double> {
 	abstract public void localIteration();
 
 	/**
-	 * Diese Methode wird von der sequentielle Loesung verwendet. Hier wird die
-	 * Summe der Quadrate der Wertänderungen einer Spalte berechntet (dient dem
-	 * Überprüfen den globalen Konvergenz).
-	 * 
-	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
-	 */
-	abstract public double serialSigma();
-
-	/**
 	 * Verrechnet den horizontalen Inflow mit den den Werten der Knoten einer
 	 * Spalte.
 	 */
 	abstract public void computeNewValues();
 
 	/**
-	 * Die Methode addiert die Akkuwerte auf die Knotenwerte und bestimmt ob die
-	 * Spalte einen lokal konvergenten Zustand erreicht hat.
-	 * 
-	 * @param akku
-	 *            Hashtable mit den zu addierenden Werten
-	 * @param values
-	 *            Hashtable mit den Knotenwerten
-	 * @return true falls die Spalte einen lokal konvergenten Zustand erreicht
-	 *         hat
+	 * Führt den Austausch den Outflows mit den Nachbarspalten aus. Benutzt wird
+	 * dazu Exchanger.exchange, dieses blockiert einen Thread solange, bis ein
+	 * Partner Exchanger.exchange auf dem gleichen Exchanger aufgerufen hat.
+	 * (S.Javadocs:
+	 * docs.oracle.com/javase/7/docs/api/java/util/concurrent/Exchanger.html).
+	 * Um lange Warteketten zu vermeiden tauscht eine Spalte mit einer ungraden
+	 * Id zuerst mit ihrem rechten Partner, dann mit ihrem linken und eine
+	 * Spalte mit einer graden Id erst mit ihrem linken, dann mit ihrem rechten
+	 * Partner.
 	 */
-	synchronized protected boolean addAccuToValuesAndLocalConvergence(Hashtable<Integer, Double> akku,
-			Hashtable<Integer, Double> values) {
-		double sigma = 0.0;
-		for (Entry<Integer, Double> entry : akku.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
-			sigma = sigma + val * val;
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
-		}
-		return sigma <= epsilonSquareDivWidth;
-	}
+	abstract protected void exchange();
 
 	/**
 	 * Diese Methode wird von den Raendern aufgerufen. Sie arbeitet mit der
@@ -232,6 +200,38 @@ abstract public class Column implements Callable<Double> {
 	}
 
 	/**
+	 * Die Methode addiert die Akkuwerte auf die Knotenwerte und bestimmt ob die
+	 * Spalte einen lokal konvergenten Zustand erreicht hat.
+	 * 
+	 * @param akku
+	 *            Hashtable mit den zu addierenden Werten
+	 * @param values
+	 *            Hashtable mit den Knotenwerten
+	 * @return true falls die Spalte einen lokal konvergenten Zustand erreicht
+	 *         hat
+	 */
+	synchronized protected boolean addAccuToValuesAndLocalConvergence(Hashtable<Integer, Double> akku,
+			Hashtable<Integer, Double> values) {
+		double sigma = 0.0;
+		for (Entry<Integer, Double> entry : akku.entrySet()) {
+			int pos = entry.getKey();
+			double val = entry.getValue();
+			sigma = sigma + val * val;
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
+		}
+		return sigma <= epsilonSquareDivWidth;
+	}
+
+	/**
+	 * Diese Methode wird von der sequentielle Loesung verwendet. Hier wird die
+	 * Summe der Quadrate der Wertänderungen einer Spalte berechntet (dient dem
+	 * Überprüfen den globalen Konvergenz).
+	 * 
+	 * @return sigma = sum(akku(i)^2), 0<=i<graph.height.
+	 */
+	abstract public double serialSigma();
+
+	/**
 	 * Setzt Die Anzahl der lokalen Iterationsschritte neu.
 	 * 
 	 * @param n
@@ -253,10 +253,6 @@ abstract public class Column implements Callable<Double> {
 	public synchronized double getValue(int row) {
 		return values.getOrDefault(row, 0.0);
 	}
-
-	/*
-	 * Setter und Getter
-	 */
 
 	abstract public Hashtable<Integer, Double> getLeft();
 

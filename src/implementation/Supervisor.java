@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import np2015.GraphInfo;
-import sequentiell.Sequentiell;
 
 /**
  * Diese Klasse organisiert die nebenläufige Ausführung eines Osmose Prozesses.

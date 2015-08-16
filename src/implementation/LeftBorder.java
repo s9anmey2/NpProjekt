@@ -70,16 +70,6 @@ public class LeftBorder extends Column {
 
 	}
 
-	@Override
-	protected synchronized void exchange() {
-		try {
-			outRight = rightEx.exchange(outRight);
-		} catch (InterruptedException e) {
-			System.out.println("Exchange failed :/");
-			e.printStackTrace();
-		}
-	}
-
 	/*
 	 * Der Unterschied zum allgemeinen Fall ist, dass setAndComputeOutflow fuer
 	 * drei statt vier Nachbarn aufgerufen wird.
@@ -132,6 +122,25 @@ public class LeftBorder extends Column {
 	}
 
 	@Override
+	public synchronized void computeNewValues() {
+		for (Entry<Integer, Double> entry : outRight.entrySet()) {
+			int pos = entry.getKey();
+			double val = entry.getValue();
+			values.put(pos, values.getOrDefault(pos, 0.0) + val);
+		}
+	}
+
+	@Override
+	protected synchronized void exchange() {
+		try {
+			outRight = rightEx.exchange(outRight);
+		} catch (InterruptedException e) {
+			System.out.println("Exchange failed :/");
+			e.printStackTrace();
+		}
+	}
+
+	@Override
 	public synchronized double serialSigma() {
 		double sigma = 0.0;
 		for (int i = 0; i < height; i++) {
@@ -141,14 +150,7 @@ public class LeftBorder extends Column {
 		return sigma;
 	}
 
-	@Override
-	public synchronized void computeNewValues() {
-		for (Entry<Integer, Double> entry : outRight.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
-		}
-	}
+	
 
 	/*
 	 * Die Setter und Getter fuer den sequentiellen Programmteil.

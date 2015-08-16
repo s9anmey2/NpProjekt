@@ -1,9 +1,9 @@
 
 package implementation;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -62,6 +62,22 @@ public class Grid implements ImageConvertible {
 		this.columns = new ArrayList<>(graph.width);
 		makeColumns();
 		rem = 1;
+	}
+
+	/**
+	 * Erzeugt alle Spalten mit entsprechenden Exchangern.
+	 */
+	private synchronized void makeColumns() {
+		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+		rightEx = new Exchanger<Hashtable<Integer, Double>>();
+		columns.add(0, new LeftBorder(graph, 0, rightEx));
+		for (int i = 1; i < graph.width - 1; i++) {
+			leftEx = rightEx;
+			rightEx = new Exchanger<Hashtable<Integer, Double>>();
+			columns.add(i, new Middle(graph, i, leftEx, rightEx));
+		}
+		leftEx = rightEx;
+		columns.add(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
 	}
 
 	/**
@@ -151,19 +167,22 @@ public class Grid implements ImageConvertible {
 	}
 
 	/**
-	 * Erzeugt alle Spalten mit entsprechenden Exchangern.
+	 * Taucht den Outflow im Falle der sequentiellen Ausführung.
+	 * 
+	 * @param i
+	 *            Index der linken Spalte
 	 */
-	private synchronized void makeColumns() {
-		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
-		rightEx = new Exchanger<Hashtable<Integer, Double>>();
-		columns.add(0, new LeftBorder(graph, 0, rightEx));
-		for (int i = 1; i < graph.width - 1; i++) {
-			leftEx = rightEx;
-			rightEx = new Exchanger<Hashtable<Integer, Double>>();
-			columns.add(i, new Middle(graph, i, leftEx, rightEx));
-		}
-		leftEx = rightEx;
-		columns.add(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
+	private synchronized void exchange(int i) {
+		Column left = columns.get(i);
+		Column right = columns.get(i + 1);
+		Hashtable<Integer, Double> dummyRight = left.getRight();
+		left.setRight(right.getLeft());
+		right.setLeft(dummyRight);
+	}
+
+	@Override
+	public synchronized double getValueAt(int column, int row) {
+		return columns.get(column).getValue(row);
 	}
 
 	/**
@@ -176,24 +195,5 @@ public class Grid implements ImageConvertible {
 		columns.forEach(column -> column.setLocals(n));
 		// Collection<Column> set = columns.values();
 		// set.stream().parallel().forEach(column -> column.setLocals(n));
-	}
-
-	@Override
-	public synchronized double getValueAt(int column, int row) {
-		return columns.get(column).getValue(row);
-	}
-
-	/**
-	 * Taucht den Outflow im Falle der sequentiellen Ausführung.
-	 * 
-	 * @param i
-	 *            Index der linken Spalte
-	 */
-	private synchronized void exchange(int i) {
-		Column left = columns.get(i);
-		Column right = columns.get(i + 1);
-		Hashtable<Integer, Double> dummyRight = left.getRight();
-		left.setRight(right.getLeft());
-		right.setLeft(dummyRight);
 	}
 }

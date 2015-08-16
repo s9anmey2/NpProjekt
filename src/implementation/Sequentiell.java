@@ -1,7 +1,6 @@
-package sequentiell;
+package implementation;
 
 import np2015.GraphInfo;
-import implementation.Grid;
 
 /**
  * Diese Klasse organisiert die sequentielle Ausführung eines Osmose Prozesses.
