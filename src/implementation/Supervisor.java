@@ -12,7 +12,6 @@ import np2015.GraphInfo;
  */
 public class Supervisor {
 
-	private final GraphInfo gInfo;
 	/*
 	 * Gitter auf dem gearbeitet wird.
 	 */
@@ -35,7 +34,7 @@ public class Supervisor {
 	 * 
 	 * Dieser Parameter kann individuell angepasst werden.
 	 */
-	private int maxLocal = 512;
+	private int maxLocal = 2;
 
 	/**
 	 * Erzeugt ein neues Supervisor Objekt.
@@ -45,15 +44,14 @@ public class Supervisor {
 	 *            Verfügung stellt.
 	 */
 	public Supervisor(GraphInfo graph) {
-		this.exe = Executors.newFixedThreadPool(
-				graph.width); /**
-								 * (s.http://docs.oracle.com/javase/7/docs/api/
-								 * java/util/concurrent/ExecutorService.html)
-								 */
-		this.gInfo = graph;
-		this.grid = new Grid(gInfo, exe);
+		this.exe = Executors.newFixedThreadPool(graph.width); 
+		/**
+		 * (s.http://docs.oracle.com/javase/7/docs/api/
+		 * java/util/concurrent/ExecutorService.html)
+		 */
+		this.grid = new Grid(graph, exe);
 		grid.setLocals(1);
-		this.numLocalIterations = 2;
+		this.numLocalIterations = 1;
 	}
 
 	/**

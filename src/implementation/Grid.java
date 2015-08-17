@@ -26,7 +26,6 @@ public class Grid implements ImageConvertible {
 	 */
 	private double rem;
 	private int counter;
-
 	/**
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
 	 * mitgegebenen GraphInfo Objekt den Initialen Wert ausliest. Dieser
