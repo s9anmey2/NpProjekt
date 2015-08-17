@@ -35,6 +35,15 @@ public class LeftBorder extends Column {
 			this.rates[i][0] = graph.getRateForTarget(me, i, Neighbor.Top);
 			this.rates[i][1] = graph.getRateForTarget(me, i, Neighbor.Right);
 			this.rates[i][2] = graph.getRateForTarget(me, i, Neighbor.Bottom);
+			/*
+			 * Normiere Raten
+			 */
+			double sum = this.rates[i][0] + this.rates[i][1] + this.rates[i][2];
+			if (sum > 1) {
+				this.rates[i][0] = this.rates[i][0] / sum;
+				this.rates[i][2] = this.rates[i][2] / sum;
+				this.rates[i][1] = this.rates[i][1] / sum;
+			}
 		}
 	}
 
@@ -149,8 +158,6 @@ public class LeftBorder extends Column {
 		}
 		return sigma;
 	}
-
-	
 
 	/*
 	 * Die Setter und Getter fuer den sequentiellen Programmteil.

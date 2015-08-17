@@ -31,13 +31,11 @@ public class Supervisor {
 	 * Rechenzeit verloren geht, ohne dass noch Aenderungen erreicht werden. Um
 	 * diesen Fall prinzipiell auszuschließen, ist als weitere Abbruchbedingung
 	 * ein vertikal-lokales Konvergenzkriterium implementiert, dass geprueft
-	 * wird. Die lokale Iteration bricht ab, wenn es erreicht ist. Wann genau
-	 * dieses Gleichgewicht erreicht ist, ließ sich nur esperimentell
-	 * abschätzen. Es hat sich ergeben, dass maxLocal = 7*weite*hoehe eine
-	 * gleichmaeßige Verteilung zwischen vollstaendigen Iterationen und
-	 * Abbruechen durch vertikale Konvergenz beguenstigt.
+	 * wird. Die lokale Iteration bricht ab, wenn es erreicht ist.
+	 * 
+	 * Dieser Parameter kann individuell angepasst werden.
 	 */
-	private int maxLocal;
+	private int maxLocal = 512;
 
 	/**
 	 * Erzeugt ein neues Supervisor Objekt.
@@ -55,8 +53,7 @@ public class Supervisor {
 		this.gInfo = graph;
 		this.grid = new Grid(gInfo, exe);
 		grid.setLocals(1);
-		this.numLocalIterations = 1;
-		this.maxLocal = graph.width * graph.height * 7;
+		this.numLocalIterations = 2;
 	}
 
 	/**

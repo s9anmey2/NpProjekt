@@ -43,6 +43,16 @@ public class Middle extends Column {
 			this.rates[i][2] = graph.getRateForTarget(me, i, Neighbor.Top);
 			this.rates[i][1] = graph.getRateForTarget(me, i, Neighbor.Right);
 			this.rates[i][3] = graph.getRateForTarget(me, i, Neighbor.Bottom);
+			/*
+			 * Normiere Raten
+			 */
+			double sum = this.rates[i][0] + this.rates[i][1] + this.rates[i][2] + this.rates[i][3];
+			if (sum > 1) {
+				this.rates[i][0] = this.rates[i][0] / sum;
+				this.rates[i][2] = this.rates[i][2] / sum;
+				this.rates[i][1] = this.rates[i][1] / sum;
+				this.rates[i][3] = this.rates[i][3] / sum;
+			}
 		}
 	}
 
@@ -117,7 +127,7 @@ public class Middle extends Column {
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
 				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
-	
+
 			}
 			/*
 			 * Am Ende jedes lokalen Iterationschrittes werden die Werte der
@@ -171,8 +181,6 @@ public class Middle extends Column {
 		}
 		return sigma;
 	}
-
-	
 
 	/*
 	 * Die Setter und Getter fuer den sequentiellen Programmteil.

@@ -157,13 +157,12 @@ public class Grid implements ImageConvertible {
 		/*
 		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte addiert.
 		 */
-		for (Column c : columns)
-			c.computeNewValues();
+		columns.forEach(column -> column.computeNewValues());
 		/*
 		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
 		 * Quadtate der Knotendifferenzen < Quadtat von Epsilon
 		 */
-		return sigma < (eps);
+		return sigma < eps;
 	}
 
 	/**
