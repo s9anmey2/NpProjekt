@@ -1,0 +1,41 @@
+in grid:
+
+neue felder: arraylist<integer> edges. 
+
+/*hierein kommen alle spalten die keine zwei nachbarn haben oder keinen nachbar
+haben und randspalte sind.vor jedem globalen iterationschritt gehen wir hier rueber und erzeugen ne dummy column, die 
+gegebenenfalls nach dem globalen iterationschritt wieder weggeschmissen wird. */
+
+arraylist<integer> exists.
+
+/*hierein kommen die ids aller spalten, deren spaltensumme != 0 ist. Wird ganz am Ende eienr globalen Iteration akt-
+ualisiert, dann drüber iteriert und jede spalte gelöscht, deren id NICHT in exists steht.*/
+
+in column: 
+
+neues feld: diff /*halt die summe der komponenten des inflow outflow differenzvektors.*/
+
+neue methoden: 
+
+public void verify(arraylist<integer> exists)
+{
+	//berechne spalten summe
+	//vergleiche auf 0
+	//exists.add(id)
+}
+
+public void diff()
+{
+	//berechne diff
+}
+
+public int getDiff()
+{
+	return diff;
+}
+
+ZU EPSILON: Ich denke, hier können wir auf 0 vergleichen: solange diff aller spalten < 0 ist, können wir die lokale 
+Schrittzahl beibehalten, sobald es >= 0 wird, wird sie geändert.
+
+
+
