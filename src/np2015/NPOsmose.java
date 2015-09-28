@@ -6,15 +6,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import implementation.Supervisor;
-//import src.sequentiell.*;
-
 import com.google.gson.Gson;
 
 public class NPOsmose {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-
-		
 		Gson gson = new Gson();
 		String json = "";
 		// read data in
@@ -32,6 +28,6 @@ public class NPOsmose {
 		 //Your implementation can now access ginfo to read out all important values
 		ImageConvertible graph = new Supervisor(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
 		ginfo.write2File("./result.txt", graph);
-	} 
-	
+	}
+
 }

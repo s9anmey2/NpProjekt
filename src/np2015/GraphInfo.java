@@ -11,20 +11,20 @@ public class GraphInfo implements GuardedCommand {
 
 	public final int width;
 	public final int height;
-	private boolean allGuardsAdded = false;
 	public final double epsilon;
 	public final double maxOutflow;
+	private boolean allGuardsAdded = false;
 	public final HashMap<Integer, HashMap<Integer, Double>> column2row2initialValue = new HashMap<>();
 	public final ArrayList<int[]> guards = new ArrayList<>();
 	public final ArrayList<double[]> commands = new ArrayList<>();
 
 	
-	public GraphInfo(final int width, final int height, final double epsilon, final double maxOutflow) {
- 		this.width = width;
- 		this.height = height;
+	public GraphInfo(final int width, final int height, final int epsilon, final double maxOutflow) {
+		this.width = width;
+		this.height = height;
 		this.epsilon = epsilon;
 		this.maxOutflow = maxOutflow;
- 	}
+	}
 		
 	public void addInitialEntry(int row, int column, double value) {
 		HashMap<Integer, Double> tmp =  column2row2initialValue.getOrDefault(row, new HashMap<>());
@@ -34,7 +34,6 @@ public class GraphInfo implements GuardedCommand {
 	
 	// adds the guard from (x,y) to its neighbor if gx <= x < gX /\ gy <= y < gY with rate  a*xy + b*x + c*y + d
 	public void addGuard(int gx, int gX, int gy, int gY,  Neighbor neighbor, double a, double b, double c, double d) {
-		System.out.println("Was los?");
 		assert(!allGuardsAdded);
 		final int[] guard = new int[5];
 		final double[] command = new double[4];
@@ -108,10 +107,10 @@ public class GraphInfo implements GuardedCommand {
 			    ) {
 				double[] command = commands.get(i);
 				final double rate = command[0]*x*y + command[1]*x + command[2]*y + command[3];
-				if(maxOutflow != 0.0)
-					return rate/maxOutflow; 
+				if (maxOutflow != 0.0)
+					return rate/maxOutflow;
 				else
-					return rate;				
+					return rate;
 			}
 		}
 		return 0;
