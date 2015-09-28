@@ -190,5 +190,9 @@ public class LeftBorder extends Column {
 	public synchronized void setRight(Hashtable<Integer, Double> left) {
 		outRight = left;
 	}
+	
+	public synchronized Exchanger<Hashtable<Integer,Double>> getEx(){
+		return rightEx;
+	}
 
 }

@@ -62,7 +62,7 @@ abstract public class Column implements Callable<Double> {
 
 		/*
 		 * Alle initialen Werte werden vom Konstruktor in der Hashtable values
-		 * gesetzt, dazu werden die entsprechenden Eintraege erschaffen.
+		 * gesetzt, dazu werden die entsprechenden Eintraege erschaffen.FLIEGT NACHHER RAUS.
 		 */
 		HashMap<Integer, Double> initialMap = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 
@@ -253,7 +253,22 @@ abstract public class Column implements Callable<Double> {
 	public synchronized double getValue(int row) {
 		return values.getOrDefault(row, 0.0);
 	}
-
+	
+	public synchronized boolean hasValue(){
+		boolean result = false;
+		for(double x : values.values())
+			result = result || (x > 0.0);
+		return result;
+	}
+	
+	public synchronized Hashtable<Integer, Double> getValues(){
+		return values;
+	}
+	
+	public synchronized void setValues(Hashtable<Integer,Double> init){
+		this.values = init;
+	}
+	
 	abstract public Hashtable<Integer, Double> getLeft();
 
 	abstract public Hashtable<Integer, Double> getRight();

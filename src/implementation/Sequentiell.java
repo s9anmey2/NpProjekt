@@ -37,6 +37,7 @@ public class Sequentiell {
 	public Sequentiell(Grid grid) {
 		this.grid = grid;
 		this.grid.setLocals(1);
+		this.grid.extendByDummies();
 	}
 
 	/**

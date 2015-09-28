@@ -2,8 +2,10 @@
 package implementation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -17,9 +19,12 @@ import np2015.ImageConvertible;
  * Gitter zur Verfügung. Grid ist ein Monitor.
  */
 public class Grid implements ImageConvertible {
-	private ArrayList<Column> columns;
+	private Hashtable<Integer,Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
+	private int[] edges = new int[2];//0 -> links, 1-> rechts
+	private LeftBorder leftdummy;
+	private RightBorder rightdummy;
 	/*
 	 * Um Terminierung sicher zu stellen wird sich in rem ein Vergleichswert
 	 * gemerkt, der regelmäßig (mit counter) auf Verbesserung geprüft wird.
@@ -56,10 +61,54 @@ public class Grid implements ImageConvertible {
 	 *            vom Aufrufer beendet werden, wenn er nicht mehr benötigt wird.
 	 */
 	public Grid(GraphInfo graph, ExecutorService exe) {
+		int firstColumn = 0;
+		Column column = null;
+		this.columns = new Hashtable<>();
 		this.exe = exe;
-		this.graph = graph;
-		this.columns = new ArrayList<>(graph.width);
-		makeColumns();
+		this.graph = graph;	
+		
+		for(Entry<Integer,HashMap<Integer,Double>> entry : graph.column2row2initialValue.entrySet())
+		{
+			for(Entry<Integer,Double> value : entry.getValue().entrySet())
+			{
+				if(value.getValue() > 0.0)
+				{
+					firstColumn = entry.getKey();
+					if(firstColumn == graph.width-1)
+					{
+					//init ist RightBorder, linkerdummy ist middle.
+						Exchanger<Hashtable<Integer, Double>> ex = new Exchanger<>();
+						column = new RightBorder(graph,firstColumn,ex);
+						leftdummy = new LeftBorder(graph, firstColumn-1,ex);
+						rightdummy = null;
+					}
+					else if(firstColumn == 0)
+					{
+					//init ist LeftBorder, rechterdummy ist middle
+						Exchanger<Hashtable<Integer, Double>> ex = new Exchanger<>();
+						column = new LeftBorder(graph,firstColumn,ex);
+						rightdummy = new RightBorder(graph, firstColumn+1,ex);
+						leftdummy = null;
+					}
+					else
+					{
+						//erste column ist keine randspalte. d.h 2 dummies und eine mittelspalte.
+						Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+						leftEx = new Exchanger<>();
+						rightEx = new Exchanger<>();
+						column = new Middle(graph,firstColumn,rightEx,leftEx); //die exchanger sind aus der perspektive der Raender gesetzt. 
+						this.leftdummy = new LeftBorder(graph,firstColumn-1,rightEx);
+						this.rightdummy = new RightBorder(graph,firstColumn+1,leftEx);
+					}
+					columns.put(firstColumn,column);
+					break;
+				}
+			}
+			if(column != null)
+				break;
+		}
+		edges[0] = firstColumn -1;
+		edges[1] = firstColumn +1;
 		rem = 1;
 	}
 
@@ -67,16 +116,20 @@ public class Grid implements ImageConvertible {
 	 * Erzeugt alle Spalten mit entsprechenden Exchangern.
 	 */
 	private synchronized void makeColumns() {
+		
+		//Loeschen wenn alles fertig ist.
 		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
 		rightEx = new Exchanger<Hashtable<Integer, Double>>();
-		columns.add(0, new LeftBorder(graph, 0, rightEx));
+		columns.put(0, new LeftBorder(graph, 0, rightEx));
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
 			rightEx = new Exchanger<Hashtable<Integer, Double>>();
-			columns.add(i, new Middle(graph, i, leftEx, rightEx));
+			columns.put(i, new Middle(graph, i, leftEx, rightEx));
 		}
 		leftEx = rightEx;
-		columns.add(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
+		columns.put(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
+		
+		
 	}
 
 	/**
@@ -100,10 +153,52 @@ public class Grid implements ImageConvertible {
 		 * zurück, wenn alle Tasks erledigt sind.
 		 */
 		try {
-			List<Future<Double>> rets = exe.invokeAll(columns);
+			Future<Double> left = null, right = null;
+			if(leftdummy != null)
+				left = exe.submit(leftdummy);
+			if(rightdummy != null)
+				right = exe.submit(rightdummy);
+			
+			List<Future<Double>> rets = exe.invokeAll(columns.values());
 			for (Future<Double> col : rets)
 				sum = col.get() + sum;
 
+			if(leftdummy != null){
+				left.get();
+				if(leftdummy.hasValue()){
+					if(edges[0] == 0){
+						columns.put(edges[0], leftdummy);
+						leftdummy = null;
+					}else{
+						Exchanger<Hashtable<Integer,Double>> newex = new Exchanger<>();
+						Middle newOne = new Middle(graph,edges[0],newex,leftdummy.getEx());
+						newOne.setValues(leftdummy.getValues());
+						columns.put(edges[0],newOne);
+						edges[0]  = edges[0] -1;
+						leftdummy = new LeftBorder(graph, edges[0],newex);
+					}
+				}
+			}
+			
+			if(rightdummy != null){
+				right.get();
+				if(rightdummy.hasValue()){
+					if(edges[1] == graph.width-1){
+						columns.put(edges[1],rightdummy);
+						rightdummy = null;
+					}else{
+						Exchanger<Hashtable<Integer,Double>> newex = new Exchanger<>();
+						Middle newOne = new Middle(graph,edges[1],newex,rightdummy.getEx());
+						newOne.setValues(rightdummy.getValues());
+						columns.put(edges[1],newOne);
+						edges[1]  = edges[1] +1;
+						rightdummy = new RightBorder(graph, edges[1],newex);
+					}
+				}
+			}
+			
+			
+			
 		} catch (Exception e) {
 			System.out.println(":/");
 			return true;
@@ -136,27 +231,38 @@ public class Grid implements ImageConvertible {
 	 */
 	public synchronized boolean serialComputation() {
 		double eps = graph.epsilon * graph.epsilon;
+		
 		/*
 		 * führe auf allen Columns eine lokale Iteration aus:
 		 */
-		columns.forEach(column -> column.localIteration());
+		columns.values().forEach(column -> column.localIteration());
 		/*
 		 * tausche die den horizontalen Flow der Spalten aus:
 		 */
-		for (int i = 0; i < graph.width - 1; i++) {
+		for (int i = edges[0]; i < edges[1]; i++) 
 			exchange(i);
+		if(edges[0] > 0 && columns.get(edges[0]).hasValue())
+		{
+			edges[0] = edges[0]-1;
+			columns.put(edges[0],new Middle(graph, edges[0],null,null));
+		}
+		
+		if(edges[1] < graph.width -1 && columns.get(edges[1]).hasValue())
+		{
+			edges[1] = edges[1]+1;
+			columns.put(edges[1],new Middle(graph, edges[1], null,null));
 		}
 		/*
 		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
-		 * Quadtate der Knotendifferenzen der Spalen (serialSigma()) addiert.
+		 * Quadrate der Knotendifferenzen der Spalen (serialSigma()) putiert.
 		 */
 		double sigma = 0.0;
-		for (Column c : columns)
+		for (Column c : columns.values())
 			sigma = sigma + c.serialSigma();
 		/*
-		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte addiert.
+		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte putiert.
 		 */
-		columns.forEach(column -> column.computeNewValues());
+		columns.values().forEach(column -> column.computeNewValues());
 		/*
 		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
 		 * Quadtate der Knotendifferenzen < Quadtat von Epsilon
@@ -182,6 +288,14 @@ public class Grid implements ImageConvertible {
 	public synchronized double getValueAt(int column, int row) {
 		return columns.get(column).getValue(row);
 	}
+	
+	public synchronized void extendByDummies()
+	{
+		if(leftdummy != null)
+			columns.put(edges[0],new Middle(graph,edges[0],null,null));
+		if(rightdummy != null)
+			columns.put(edges[1],new Middle(graph,edges[1],null,null));
+	}
 
 	/**
 	 * Setzt die Anzahl der lokalen Iterationen.
@@ -190,7 +304,7 @@ public class Grid implements ImageConvertible {
 	 *            Anzahl der lokalen Iterationen
 	 */
 	public synchronized void setLocals(int n) {
-		columns.forEach(column -> column.setLocals(n));
+		columns.values().forEach(column -> column.setLocals(n));
 		// Collection<Column> set = columns.values();
 		// set.stream().parallel().forEach(column -> column.setLocals(n));
 	}

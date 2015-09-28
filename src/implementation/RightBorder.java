@@ -189,4 +189,7 @@ public class RightBorder extends Column {
 		return;
 	}
 
+	public synchronized Exchanger<Hashtable<Integer,Double>> getEx(){
+		return leftEx;
+	}
 }
