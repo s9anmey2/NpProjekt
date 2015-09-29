@@ -75,7 +75,7 @@ public class Grid implements ImageConvertible {
 					firstColumn = entry.getKey();
 					if(firstColumn == graph.width-1)
 					{
-					//init ist RightBorder, linkerdummy ist middle.
+					//init ist RightBorder.
 						Exchanger<double[]> ex = new Exchanger<>();
 						column = new RightBorder(graph,firstColumn,ex);
 						leftdummy = new LeftBorder(graph, firstColumn-1,ex);
@@ -83,7 +83,7 @@ public class Grid implements ImageConvertible {
 					}
 					else if(firstColumn == 0)
 					{
-					//init ist LeftBorder, rechterdummy ist middle
+					//init ist LeftBorder.
 						Exchanger<double[]> ex = new Exchanger<>();
 						column = new LeftBorder(graph,firstColumn,ex);
 						rightdummy = new RightBorder(graph, firstColumn+1,ex);
@@ -127,8 +127,6 @@ public class Grid implements ImageConvertible {
 		}
 		leftEx = rightEx;
 		columns.put(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
-		
-		
 	}
 
 	/**
@@ -163,7 +161,7 @@ public class Grid implements ImageConvertible {
 				sum = col.get() + sum;
 
 			if(leftdummy != null){
-				left.get();
+				sum += left.get();
 				if(leftdummy.hasValue()){
 					if(edges[0] == 0){
 						columns.put(edges[0], leftdummy);
@@ -180,7 +178,7 @@ public class Grid implements ImageConvertible {
 			}
 			
 			if(rightdummy != null){
-				right.get();
+				sum += right.get();
 				if(rightdummy.hasValue()){
 					if(edges[1] == graph.width-1){
 						columns.put(edges[1],rightdummy);
@@ -240,6 +238,7 @@ public class Grid implements ImageConvertible {
 		 */
 		for (int i = edges[0]; i < edges[1]; i++) 
 			exchange(i);
+		
 		if(edges[0] > 0 && columns.get(edges[0]).hasValue())
 		{
 			edges[0] = edges[0]-1;

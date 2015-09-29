@@ -34,7 +34,7 @@ public class Supervisor {
 	 * 
 	 * Dieser Parameter kann individuell angepasst werden.
 	 */
-	private int maxLocal = 2;
+	private int maxLocal = 8;
 
 	/**
 	 * Erzeugt ein neues Supervisor Objekt.
