@@ -1,7 +1,6 @@
 
 package implementation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -77,7 +76,7 @@ public class Grid implements ImageConvertible {
 					if(firstColumn == graph.width-1)
 					{
 					//init ist RightBorder, linkerdummy ist middle.
-						Exchanger<Hashtable<Integer, Double>> ex = new Exchanger<>();
+						Exchanger<double[]> ex = new Exchanger<>();
 						column = new RightBorder(graph,firstColumn,ex);
 						leftdummy = new LeftBorder(graph, firstColumn-1,ex);
 						rightdummy = null;
@@ -85,7 +84,7 @@ public class Grid implements ImageConvertible {
 					else if(firstColumn == 0)
 					{
 					//init ist LeftBorder, rechterdummy ist middle
-						Exchanger<Hashtable<Integer, Double>> ex = new Exchanger<>();
+						Exchanger<double[]> ex = new Exchanger<>();
 						column = new LeftBorder(graph,firstColumn,ex);
 						rightdummy = new RightBorder(graph, firstColumn+1,ex);
 						leftdummy = null;
@@ -93,7 +92,7 @@ public class Grid implements ImageConvertible {
 					else
 					{
 						//erste column ist keine randspalte. d.h 2 dummies und eine mittelspalte.
-						Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+						Exchanger<double[]> leftEx, rightEx;
 						leftEx = new Exchanger<>();
 						rightEx = new Exchanger<>();
 						column = new Middle(graph,firstColumn,rightEx,leftEx); //die exchanger sind aus der perspektive der Raender gesetzt. 
@@ -118,12 +117,12 @@ public class Grid implements ImageConvertible {
 	private synchronized void makeColumns() {
 		
 		//Loeschen wenn alles fertig ist.
-		Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
-		rightEx = new Exchanger<Hashtable<Integer, Double>>();
+		Exchanger<double[]> leftEx, rightEx;
+		rightEx = new Exchanger<double[]>();
 		columns.put(0, new LeftBorder(graph, 0, rightEx));
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
-			rightEx = new Exchanger<Hashtable<Integer, Double>>();
+			rightEx = new Exchanger<double[]>();
 			columns.put(i, new Middle(graph, i, leftEx, rightEx));
 		}
 		leftEx = rightEx;
@@ -170,7 +169,7 @@ public class Grid implements ImageConvertible {
 						columns.put(edges[0], leftdummy);
 						leftdummy = null;
 					}else{
-						Exchanger<Hashtable<Integer,Double>> newex = new Exchanger<>();
+						Exchanger<double[]> newex = new Exchanger<>();
 						Middle newOne = new Middle(graph,edges[0],newex,leftdummy.getEx());
 						newOne.setValues(leftdummy.getValues());
 						columns.put(edges[0],newOne);
@@ -187,7 +186,7 @@ public class Grid implements ImageConvertible {
 						columns.put(edges[1],rightdummy);
 						rightdummy = null;
 					}else{
-						Exchanger<Hashtable<Integer,Double>> newex = new Exchanger<>();
+						Exchanger<double[]> newex = new Exchanger<>();
 						Middle newOne = new Middle(graph,edges[1],newex,rightdummy.getEx());
 						newOne.setValues(rightdummy.getValues());
 						columns.put(edges[1],newOne);
@@ -279,14 +278,14 @@ public class Grid implements ImageConvertible {
 	private synchronized void exchange(int i) {
 		Column left = columns.get(i);
 		Column right = columns.get(i + 1);
-		Hashtable<Integer, Double> dummyRight = left.getRight();
+		double[] dummyRight = left.getRight();
 		left.setRight(right.getLeft());
 		right.setLeft(dummyRight);
 	}
 
 	@Override
 	public synchronized double getValueAt(int column, int row) {
-		return columns.get(column).getValue(row);
+		return columns.getOrDefault(column, new Middle(graph, column, null, null)).getValue(row);
 	}
 	
 	public synchronized void extendByDummies()

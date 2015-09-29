@@ -1,7 +1,5 @@
 package implementation;
 
-import java.util.Hashtable;
-import java.util.Map.Entry;
 import java.util.concurrent.Exchanger;
 
 import np2015.GraphInfo;
@@ -16,17 +14,17 @@ public class RightBorder extends Column {
 	/*
 	 * Rightborder muss nur mit dem linken Nachbarn kommunizieren.
 	 */
-	private Hashtable<Integer, Double> outLeft;
-	private Exchanger<Hashtable<Integer, Double>> leftEx;
+	private double[] outLeft;
+	private Exchanger<double[]> leftEx;
 	/*
 	 * Raten werden gespeicht, damit sie nicht immer neu berechnet werden
 	 * müssen.
 	 */
 	private double[][] rates;
 
-	public RightBorder(GraphInfo graph, int y, Exchanger<Hashtable<Integer, Double>> left) {
+	public RightBorder(GraphInfo graph, int y, Exchanger<double[]> left) {
 		super(graph, y);
-		this.outLeft = new Hashtable<>(graph.height, 1);
+		this.outLeft = new double[graph.height];
 		this.leftEx = left;
 
 		this.rates = new double[graph.height][3];
@@ -55,7 +53,7 @@ public class RightBorder extends Column {
 	 */
 	@Override
 	public synchronized Double call() {
-		if (values.size() != 0)
+		if (this.hasValue())
 			localIteration();
 		/*
 		 * Zur Berechnung des Rückgabe Wertes sind sowohl Inflow als auch
@@ -70,7 +68,7 @@ public class RightBorder extends Column {
 		 * Outflowtables statt und mit dem return werden die gemerkten
 		 * Referenzen wieder vergessen. Es gibt also keine Dataraces!
 		 */
-		Hashtable<Integer, Double> leftAccu = outLeft;
+		double[] leftAccu = outLeft;
 		exchange();
 		double ret = getDelta(leftAccu, outLeft);
 		computeNewValues();
@@ -87,7 +85,7 @@ public class RightBorder extends Column {
 		 * Vor den lokalen Iterationen muss der horizontalen Outflows auf 0
 		 * gesetzt werden.
 		 */
-		outLeft = new Hashtable<>(height, 1);
+		outLeft = new double[height];
 		/*
 		 * Jetzt werden so viele lokale Iterationen ausgeführt wie in
 		 * localIterations steht.
@@ -97,14 +95,13 @@ public class RightBorder extends Column {
 			 * Zu Beginn des lokalen Iterationschrittes muss der Akku des
 			 * vertikalen Flows auf 0 gesetzt werden.
 			 */
-			akku = new Hashtable<>(height, 1);
+			akku = new double[height];
 			/*
 			 * Für jeden Knoten werden die Outflows berechnet und in den
 			 * entsprechenden Akkumulatoren hinzugefügt.
 			 */
-			for (Entry<Integer, Double> knoten : values.entrySet()) {
-				double val = knoten.getValue();
-				int currentPos = knoten.getKey();
+			for (int currentPos = 0; currentPos < height; currentPos++) {
+				double val = values[currentPos];
 				/*
 				 * Der Outflow in jede Richtung wird berechnet. Der berechnete
 				 * Wert wird in den Akkus der empfangenden Knoten abgelegt (das
@@ -114,7 +111,7 @@ public class RightBorder extends Column {
 				val = -(setAndComputeOutflow(akku, val, currentPos - 1, rates[currentPos][1])
 						+ setAndComputeOutflow(akku, val, currentPos + 1, rates[currentPos][2])
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][0]));
-				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
+				akku[currentPos] = akku[currentPos] + val;
 			}
 			/*
 			 * Am Ende jedes lokalen Iterationschrittes werden die Werte der
@@ -130,10 +127,9 @@ public class RightBorder extends Column {
 
 	@Override
 	public synchronized void computeNewValues() {
-		for (Entry<Integer, Double> entry : outLeft.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
+		for (int pos = 0; pos < height; pos++) {
+			double val = outLeft[pos];
+			values[pos] = values[pos] + val;
 		}
 	}
 
@@ -151,7 +147,7 @@ public class RightBorder extends Column {
 	public synchronized double serialSigma() {
 		double sigma = 0.0;
 		for (int i = 0; i < height; i++) {
-			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0);
+			double val = akku[i] + outLeft[i];
 			sigma = sigma + val * val;
 		}
 		return sigma;
@@ -162,7 +158,7 @@ public class RightBorder extends Column {
 	 */
 
 	@Override
-	public synchronized Hashtable<Integer, Double> getLeft() {
+	public synchronized double[] getLeft() {
 		return outLeft;
 	}
 
@@ -172,12 +168,12 @@ public class RightBorder extends Column {
 	 * @return null.
 	 */
 	@Override
-	public synchronized Hashtable<Integer, Double> getRight() {
+	public synchronized double[] getRight() {
 		return null;
 	}
 
 	@Override
-	public synchronized void setLeft(Hashtable<Integer, Double> right) {
+	public synchronized void setLeft(double[] right) {
 		outLeft = right;
 	}
 
@@ -185,11 +181,11 @@ public class RightBorder extends Column {
 	 * Da RightBorder keinen rechten Nachbarn hat, wird hier nichts gemacht.
 	 */
 	@Override
-	public synchronized void setRight(Hashtable<Integer, Double> left) {
+	public synchronized void setRight(double[] left) {
 		return;
 	}
 
-	public synchronized Exchanger<Hashtable<Integer,Double>> getEx(){
+	public synchronized Exchanger<double[]> getEx(){
 		return leftEx;
 	}
 }

@@ -1,7 +1,5 @@
 package implementation;
 
-import java.util.Hashtable;
-import java.util.Map.Entry;
 import java.util.concurrent.Exchanger;
 
 import np2015.GraphInfo;
@@ -18,22 +16,22 @@ public class Middle extends Column {
 	 * Iterationsschritten an die Nachbarspalten abgegeben werden und werden zu
 	 * Beginn eines globalen Iterationsschritts geleert.
 	 */
-	private Hashtable<Integer, Double> outLeft;
-	private Hashtable<Integer, Double> outRight;
+	private double[] outLeft;
+	private double[] outRight;
 
-	private Exchanger<Hashtable<Integer, Double>> leftEx, rightEx;
+	private Exchanger<double[]> leftEx, rightEx;
 	/*
 	 * Raten werden gespeicht, damit sie nicht immer neu berechnet werden
 	 * müssen.
 	 */
 	private double[][] rates;
 
-	public Middle(GraphInfo graph, int y, Exchanger<Hashtable<Integer, Double>> left,
-			Exchanger<Hashtable<Integer, Double>> right) {
+	public Middle(GraphInfo graph, int y, Exchanger<double[]> left,
+			Exchanger<double[]> right) {
 		super(graph, y);
 
-		this.outRight = new Hashtable<>(graph.height, 1);
-		this.outLeft = new Hashtable<>(graph.height, 1);
+		this.outRight = new double[graph.height];
+		this.outLeft = new double[graph.height];
 		this.leftEx = left;
 		this.rightEx = right;
 
@@ -68,7 +66,7 @@ public class Middle extends Column {
 	 */
 	@Override
 	public synchronized Double call() {
-		if (values.size() != 0)
+		if (this.hasValue())
 			localIteration();
 		/*
 		 * Zur Berechnung des Rückgabe Wertes sind sowohl Inflow als auch
@@ -83,8 +81,8 @@ public class Middle extends Column {
 		 * Outflowtables statt und mit dem return werden die gemerkten
 		 * Referenzen wieder vergessen. Es gibt also keine Dataraces!
 		 */
-		Hashtable<Integer, Double> rightAccu = outRight;
-		Hashtable<Integer, Double> leftAccu = outLeft;
+		double[] rightAccu = outRight;
+		double[] leftAccu = outLeft;
 		exchange();
 		double ret = getDelta(leftAccu, outLeft, rightAccu, outRight);
 		computeNewValues();
@@ -97,8 +95,8 @@ public class Middle extends Column {
 		 * Vor den lokalen Iterationen muessen die horizontalen Outflows auf 0
 		 * gesetzt werden.
 		 */
-		outLeft = new Hashtable<>(height, 1);
-		outRight = new Hashtable<>(height, 1);
+		outLeft = new double[height];
+		outRight = new double[height];
 		/*
 		 * Jetzt werden so viele lokale Iterationen ausgeführt wie in
 		 * localIterations steht.
@@ -108,14 +106,13 @@ public class Middle extends Column {
 			 * Zu Beginn des lokalen Iterationschrittes muss der Akku des
 			 * vertikalen Flows auf 0 gesetzt werden.
 			 */
-			akku = new Hashtable<>(height, 1);
+			akku = new double[height];
 			/*
 			 * Für jeden Knoten werden die Outflows berechnet und in den
 			 * entsprechenden Akkumulatoren hinzugefügt.
 			 */
-			for (Entry<Integer, Double> knoten : values.entrySet()) {
-				double val = knoten.getValue();
-				int currentPos = knoten.getKey();
+			for (int currentPos = 0; currentPos < height; currentPos++) {
+				double val = values[currentPos];
 				/*
 				 * Der Outflow in jede Richtung wird berechnet. Der berechnete
 				 * Wert wird in den Akkus der empfangenden Knoten abgelegt (das
@@ -126,7 +123,7 @@ public class Middle extends Column {
 						+ setAndComputeOutflow(akku, val, currentPos + 1, rates[currentPos][Neighbor.Bottom.ordinal()])
 						+ setAndComputeOutflow(outLeft, val, currentPos, rates[currentPos][Neighbor.Left.ordinal()])
 						+ setAndComputeOutflow(outRight, val, currentPos, rates[currentPos][Neighbor.Right.ordinal()]));
-				akku.put(currentPos, akku.getOrDefault(currentPos, 0.0) + val);
+				akku[currentPos] = akku[currentPos] + val;
 
 			}
 			/*
@@ -143,15 +140,8 @@ public class Middle extends Column {
 
 	@Override
 	public synchronized void computeNewValues() {
-		for (Entry<Integer, Double> entry : outLeft.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
-		}
-		for (Entry<Integer, Double> entry : outRight.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
+		for (int pos = 0; pos < height; pos++) {
+			values[pos] = values[pos] + outLeft[pos] + outRight[pos];
 		}
 	}
 
@@ -176,7 +166,7 @@ public class Middle extends Column {
 	public synchronized double serialSigma() {
 		double sigma = 0.0;
 		for (int i = 0; i < height; i++) {
-			double val = akku.getOrDefault(i, 0.0) + outLeft.getOrDefault(i, 0.0) + outRight.getOrDefault(i, 0.0);
+			double val = akku[i] + outLeft[i] + outRight[i];
 			sigma = sigma + val * val;
 		}
 		return sigma;
@@ -187,22 +177,22 @@ public class Middle extends Column {
 	 */
 
 	@Override
-	public synchronized Hashtable<Integer, Double> getLeft() {
+	public synchronized double[] getLeft() {
 		return outLeft;
 	}
 
 	@Override
-	public synchronized Hashtable<Integer, Double> getRight() {
+	public synchronized double[] getRight() {
 		return outRight;
 	}
 
 	@Override
-	public synchronized void setLeft(Hashtable<Integer, Double> right) {
+	public synchronized void setLeft(double[] right) {
 		outLeft = right;
 	}
 
 	@Override
-	public synchronized void setRight(Hashtable<Integer, Double> left) {
+	public synchronized void setRight(double[] left) {
 		outRight = left;
 	}
 

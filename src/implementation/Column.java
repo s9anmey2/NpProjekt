@@ -1,7 +1,6 @@
 package implementation;
 
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
@@ -23,13 +22,13 @@ abstract public class Column implements Callable<Double> {
 	/*
 	 * values enthält die aktuellen Werte der Spalte.
 	 */
-	protected Hashtable<Integer, Double> values;
+	protected double[] values;
 
 	/*
 	 * akku enthält die Werde des vertikalen Flows und wird zu Beginn jeden
 	 * lokalen Iterationsschritts geleert.
 	 */
-	protected Hashtable<Integer, Double> akku;
+	protected double[] akku;
 
 	/*
 	 * height ist die Höhe der Spalte (Höhe des Gitters). LocalIterations wird
@@ -55,8 +54,8 @@ abstract public class Column implements Callable<Double> {
 	public Column(GraphInfo graph, int y) {
 
 		this.height = graph.height;
-		this.values = new Hashtable<>(graph.height, 1);
-		this.akku = new Hashtable<>(graph.height, 1);
+		this.values = new double[graph.height];
+		this.akku = new double[graph.height];
 		this.me = y;
 		this.epsilonSquareDivWidth = graph.epsilon * graph.epsilon / graph.width;
 
@@ -67,7 +66,7 @@ abstract public class Column implements Callable<Double> {
 		HashMap<Integer, Double> initialMap = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 
 		for (Entry<Integer, Double> entry : initialMap.entrySet()) {
-			values.put(entry.getKey(), entry.getValue());
+			values[entry.getKey()] = entry.getValue();
 		}
 	}
 
@@ -131,10 +130,10 @@ abstract public class Column implements Callable<Double> {
 	 * @return das Quadrat des euklidischen Abstandes zwischen Inflow, Outflow
 	 *         am Ende desselben globalen Iterationsschrittes.
 	 */
-	synchronized protected double getDelta(Hashtable<Integer, Double> outflow, Hashtable<Integer, Double> inflow) {
+	synchronized protected double getDelta(double[] outflow, double[] inflow) {
 		double delta = 0.0;
 		for (int j = 0; j < height; j++) {
-			double val = (outflow.getOrDefault(j, 0.0) - inflow.getOrDefault(j, 0.0));
+			double val = (outflow[j] - inflow[j]);
 			delta = val * val + delta;
 		}
 		return delta;
@@ -160,12 +159,12 @@ abstract public class Column implements Callable<Double> {
 	 * @return die Summe der Quadrate des horizontalen Flows aller Knoten der
 	 *         Spalte.
 	 */
-	synchronized protected double getDelta(Hashtable<Integer, Double> outLeft, Hashtable<Integer, Double> inLeft,
-			Hashtable<Integer, Double> outRight, Hashtable<Integer, Double> inRight) {
+	synchronized protected double getDelta(double[] outLeft, double[] inLeft,
+			double[] outRight, double[] inRight) {
 		double delta = 0.0;
 		for (int j = 0; j < height; j++) {
-			double val = ((outLeft.getOrDefault(j, 0.0) + outRight.getOrDefault(j, 0.0))
-					- (inLeft.getOrDefault(j, 0.0) + inRight.getOrDefault(j, 0.0)));
+			double val = ((outLeft[j] + outRight[j])
+					- (inLeft[j] + inRight[j]));
 			delta = val * val + delta;
 		}
 		return delta;
@@ -185,7 +184,7 @@ abstract public class Column implements Callable<Double> {
 	 *            Die Abflussrate in eine bestimmte Richtung.
 	 * @return Absoluter Outflow, dieser wurde noch nicht gesetzt.
 	 */
-	protected synchronized double setAndComputeOutflow(Hashtable<Integer, Double> map, double val, int position,
+	protected synchronized double setAndComputeOutflow(double[] map, double val, int position,
 			double rate) {
 		double ret = 0.0;
 		/*
@@ -194,7 +193,7 @@ abstract public class Column implements Callable<Double> {
 		 */
 		if (rate != 0.0 && val != 0.0) {
 			ret = val * rate;
-			map.put(position, map.getOrDefault(position, 0.0) + ret);
+			map[position] = map[position] + ret;
 		}
 		return ret;
 	}
@@ -210,14 +209,13 @@ abstract public class Column implements Callable<Double> {
 	 * @return true falls die Spalte einen lokal konvergenten Zustand erreicht
 	 *         hat
 	 */
-	synchronized protected boolean addAccuToValuesAndLocalConvergence(Hashtable<Integer, Double> akku,
-			Hashtable<Integer, Double> values) {
+	synchronized protected boolean addAccuToValuesAndLocalConvergence(double[] akku,
+			double[] values) {
 		double sigma = 0.0;
-		for (Entry<Integer, Double> entry : akku.entrySet()) {
-			int pos = entry.getKey();
-			double val = entry.getValue();
+		for (int pos = 0; pos < height; pos++) {
+			double val = akku[pos];
 			sigma = sigma + val * val;
-			values.put(pos, values.getOrDefault(pos, 0.0) + val);
+			values[pos] = values[pos] + val;
 		}
 		return sigma <= epsilonSquareDivWidth;
 	}
@@ -251,29 +249,29 @@ abstract public class Column implements Callable<Double> {
 	 * @return Den Wert des Knoten mit id row.
 	 */
 	public synchronized double getValue(int row) {
-		return values.getOrDefault(row, 0.0);
+		return values[row];
 	}
 	
 	public synchronized boolean hasValue(){
 		boolean result = false;
-		for(double x : values.values())
+		for(double x : values)
 			result = result || (x > 0.0);
 		return result;
 	}
 	
-	public synchronized Hashtable<Integer, Double> getValues(){
+	public synchronized double[] getValues(){
 		return values;
 	}
 	
-	public synchronized void setValues(Hashtable<Integer,Double> init){
+	public synchronized void setValues(double[] init){
 		this.values = init;
 	}
 	
-	abstract public Hashtable<Integer, Double> getLeft();
+	abstract public double[] getLeft();
 
-	abstract public Hashtable<Integer, Double> getRight();
+	abstract public double[] getRight();
 
-	abstract public void setLeft(Hashtable<Integer, Double> right);
+	abstract public void setLeft(double[] right);
 
-	abstract public void setRight(Hashtable<Integer, Double> left);
+	abstract public void setRight(double[] left);
 }
