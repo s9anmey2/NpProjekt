@@ -42,8 +42,50 @@ public class Grid implements ImageConvertible {
 	 *            Verfügung stellt.
 	 */
 	public Grid(GraphInfo graph) {
-		this.graph = graph;
-		makeColumns();
+		int firstColumn = 0;
+		Column column = null;
+		this.columns = new Hashtable<>();
+		this.graph = graph;	
+		
+		for(Entry<Integer,HashMap<Integer,Double>> entry : graph.column2row2initialValue.entrySet())
+		{
+			for(Entry<Integer,Double> value : entry.getValue().entrySet())
+			{
+				if(value.getValue() > 0.0)
+				{
+					firstColumn = entry.getKey();
+					if(firstColumn == graph.width-1)
+					{
+					//init ist RightBorder.
+						column = new RightBorder(graph,firstColumn,null);
+						leftdummy = new LeftBorder(graph, firstColumn-1,null);
+						rightdummy = null;
+					}
+					else if(firstColumn == 0)
+					{
+					//init ist LeftBorder.
+						column = new LeftBorder(graph,firstColumn,null);
+						rightdummy = new RightBorder(graph, firstColumn+1,null);
+						leftdummy = null;
+					}
+					else
+					{
+						//erste column ist keine randspalte. d.h 2 dummies und eine mittelspalte.
+						column = new Middle(graph,firstColumn,null,null); //die exchanger sind aus der perspektive der Raender gesetzt. 
+						this.leftdummy = new LeftBorder(graph,firstColumn-1,null);
+						this.rightdummy = new RightBorder(graph,firstColumn+1,null);
+					}
+					columns.put(firstColumn,column);
+					break;
+				}
+			}
+			if(column != null)
+				break;
+		}
+		edges[0] = firstColumn -1;
+		edges[1] = firstColumn +1;
+		this.extendByDummies();
+		rem = 1;
 	}
 
 	/**
