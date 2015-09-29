@@ -21,7 +21,7 @@ public class Grid implements ImageConvertible {
 	private Hashtable<Integer,Column> columns;
 	private GraphInfo graph;
 	private ExecutorService exe;
-	private int[] edges = new int[2];//0 -> links, 1-> rechts
+	private int[] edges = new int[2];//0 -> links, 1-> rechts; position der Dummys
 	private LeftBorder leftdummy;
 	private RightBorder rightdummy;
 	/*
