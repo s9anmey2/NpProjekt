@@ -20,6 +20,7 @@ import np2015.ImageConvertible;
 public class Grid implements ImageConvertible {
 	private Hashtable<Integer, Column> columns;
 	private GraphInfo graph;
+	private int localIterations;
 	private ExecutorService exe;
 	/*
 	 * In edges wird die Position der Dummys gespeichert. edges[0] -> links,
@@ -28,13 +29,6 @@ public class Grid implements ImageConvertible {
 	private int[] edges = new int[2];
 	private LeftBorder leftdummy;
 	private RightBorder rightdummy;
-	/*
-	 * Um Terminierung sicher zu stellen wird sich in rem ein Vergleichswert
-	 * gemerkt, der regelmäßig (mit counter) auf Verbesserung geprüft wird.
-	 */
-	private double rem;
-	private int counter;
-	private int localIterations;
 
 	/**
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
@@ -68,17 +62,8 @@ public class Grid implements ImageConvertible {
 						rightdummy = new RightBorder(graph, firstColumn + 1, null, localIterations);
 						leftdummy = null;
 					} else {
-						// erste column ist keine randspalte. d.h 2 dummies und
-						// eine mittelspalte.
-						column = new Middle(graph, firstColumn, null, null, localIterations); // die
-																								// exchanger
-																								// sind
-																								// aus
-																								// der
-																								// perspektive
-																								// der
-																								// Raender
-																								// gesetzt.
+						// init ist Middle
+						column = new Middle(graph, firstColumn, null, null, localIterations);
 						this.leftdummy = new LeftBorder(graph, firstColumn - 1, null, localIterations);
 						this.rightdummy = new RightBorder(graph, firstColumn + 1, null, localIterations);
 					}
@@ -92,8 +77,6 @@ public class Grid implements ImageConvertible {
 		edges[0] = firstColumn - 1;
 		edges[1] = firstColumn + 1;
 		this.extendByDummies();
-
-		rem = 1;
 	}
 
 	/**
@@ -133,20 +116,11 @@ public class Grid implements ImageConvertible {
 						rightdummy = new RightBorder(graph, firstColumn + 1, ex, localIterations);
 						leftdummy = null;
 					} else {
-						// erste column ist keine randspalte. d.h 2 dummies und
-						// eine mittelspalte.
+						// init ist Middle
 						Exchanger<double[]> leftEx, rightEx;
 						leftEx = new Exchanger<>();
 						rightEx = new Exchanger<>();
-						column = new Middle(graph, firstColumn, rightEx, leftEx, localIterations); // die
-																									// exchanger
-																									// sind
-																									// aus
-																									// der
-																									// perspektive
-																									// der
-																									// Raender
-																									// gesetzt.
+						column = new Middle(graph, firstColumn, rightEx, leftEx, localIterations);
 						this.leftdummy = new LeftBorder(graph, firstColumn - 1, rightEx, localIterations);
 						this.rightdummy = new RightBorder(graph, firstColumn + 1, leftEx, localIterations);
 					}
@@ -159,8 +133,6 @@ public class Grid implements ImageConvertible {
 		}
 		edges[0] = firstColumn - 1;
 		edges[1] = firstColumn + 1;
-
-		rem = 1;
 	}
 
 	/**
@@ -176,27 +148,29 @@ public class Grid implements ImageConvertible {
 		 * sum enthält die Summe der Knotendifferenzen bezüglich den
 		 * horizontalen Flows.
 		 */
-		double sum = 0.0;
+		boolean returnvalue = true;
 		/*
 		 * Nun sollen die lokalen Iterationen auf allen Spalten nebenläufig
-		 * berechnet werden, dazu werden die Spalten dem ExecutorService
-		 * übergeben, welcher dies dann erledigt. invokeAll kehrt erst dann
-		 * zurück, wenn alle Tasks erledigt sind.
+		 * berechnet werden, dazu werden die Spalten, sowie die Dummies dem
+		 * ExecutorService übergeben, welcher dies dann erledigt. invokeAll
+		 * kehrt erst dann zurück, wenn alle Tasks erledigt sind.
 		 */
 		try {
-
-			Future<Double> left = null, right = null;
+			Future<Boolean> left = null, right = null;
 			if (leftdummy != null)
 				left = exe.submit(leftdummy);
 			if (rightdummy != null)
 				right = exe.submit(rightdummy);
 
-			List<Future<Double>> returns = exe.invokeAll(columns.values());
-			for (Future<Double> col : returns)
-				sum = col.get() + sum;
+			List<Future<Boolean>> returns = exe.invokeAll(columns.values());
+			for (Future<Boolean> col : returns)
+				returnvalue &= col.get();
 
+			/*
+			 * Falls nötig werden noch neue Dummies angelegt.
+			 */
 			if (leftdummy != null) {
-				sum += left.get();
+				returnvalue &= left.get();
 				if (leftdummy.hasValue()) {
 					if (edges[0] == 0) {
 						columns.put(edges[0], leftdummy);
@@ -213,7 +187,7 @@ public class Grid implements ImageConvertible {
 			}
 
 			if (rightdummy != null) {
-				sum += right.get();
+				returnvalue &= right.get();
 				if (rightdummy.hasValue()) {
 					if (edges[1] == graph.width - 1) {
 						columns.put(edges[1], rightdummy);
@@ -234,22 +208,9 @@ public class Grid implements ImageConvertible {
 			return true;
 		}
 		/*
-		 * Alle 10000 Aufrufe dieser Methode wird auf Annäherung an das
-		 * Konvergenzkriterium geprüft. Ist keine Verbesserung feststellbar,
-		 * wird true zurückgegeben.
+		 * Es wird zurückgegeben, ob schon das Konvergenzkriterium erfüllt wird.
 		 */
-		if (counter++ >= 10000) {
-			counter = 0;
-			if (sum < rem)
-				rem = sum;
-			else
-				return true;
-		}
-		/*
-		 * Im Normalfall wird zurückgegeben, ob die Wertdifferenzen bezüglich
-		 * des horizontalen Flows schon das Konvergenzkriterium erfüllen.
-		 */
-		return sum < (graph.epsilon * graph.epsilon);
+		return returnvalue;
 	}
 
 	/**

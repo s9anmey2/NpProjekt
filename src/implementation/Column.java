@@ -17,7 +17,7 @@ import np2015.GraphInfo;
  * in einer Klassenhierarchie, mit 3 Kindern, von denen eines den linken, eines
  * den rechten Rand implementiert und das dritte die Mitte.
  **/
-abstract public class Column implements Callable<Double> {
+abstract public class Column implements Callable<Boolean> {
 
 	/*
 	 * values enthält die aktuellen Werte der Spalte.
@@ -39,13 +39,13 @@ abstract public class Column implements Callable<Double> {
 	 * ist, ueber eine Zeile mit ihrer Id zu sprechen als mit einem konkreten
 	 * Integer.)
 	 */
-	protected int height, me, localIterations;
+	protected int height, width, me, localIterations;
 
 	/*
 	 * Das Konvergenzkriterium anhand dessen lokale, vertikale Konvergenz
 	 * gemessen wird.
 	 **/
-	protected double epsilonSquareDivWidth;
+	protected double epsilon;
 
 	/**
 	 * @param graph
@@ -54,10 +54,11 @@ abstract public class Column implements Callable<Double> {
 	public Column(GraphInfo graph, int y, int localIterations) {
 
 		this.height = graph.height;
+		this.width = graph.width;
 		this.values = new double[graph.height];
 		this.akku = new double[graph.height];
 		this.me = y;
-		this.epsilonSquareDivWidth = graph.epsilon * graph.epsilon / graph.width;
+		this.epsilon = graph.epsilon;
 		this.localIterations = localIterations;
 
 		/*
@@ -84,7 +85,7 @@ abstract public class Column implements Callable<Double> {
 	 *         einem bestimmten globalen Iterationschritt.
 	 */
 	@Override
-	abstract public Double call();
+	abstract public Boolean call();
 
 	/**
 	 * Berechnet mit einer For- Schleife den vertikalen wie horizontalen Flow.
@@ -119,8 +120,9 @@ abstract public class Column implements Callable<Double> {
 	abstract protected void exchange();
 
 	/**
-	 * Diese Methode wird von den Raendern aufgerufen. Sie arbeitet mit der
-	 * Differenz des horizontalen Outflow/Inflow.
+	 * Diese Methode arbeitet mit der Differenz des horizontalen Outflow/Inflow.
+	 * Mit dieser Information kann dann die globale Konvergenz abgeschaetzt
+	 * werden.
 	 * 
 	 * @param outflow
 	 *            Der Outflow, den diese Spalte in einem bestimmten globalen
@@ -131,42 +133,13 @@ abstract public class Column implements Callable<Double> {
 	 * @return das Quadrat des euklidischen Abstandes zwischen Inflow, Outflow
 	 *         am Ende desselben globalen Iterationsschrittes.
 	 */
-	synchronized protected double getDelta(double[] outflow, double[] inflow) {
+	synchronized protected boolean getDelta(double[] outflow, double[] inflow) {
 		double delta = 0.0;
 		for (int j = 0; j < height; j++) {
-			double val = (outflow[j] - inflow[j]);
-			delta = val * val + delta;
+			delta += inflow[j] - outflow[j];
 		}
-		return delta;
-	}
-
-	/**
-	 * Diese Methode wird von den mittleren Spalten aufgerufen. Sie arbeitet mit
-	 * der Differenz des horizontalen Outflow/Inflow.. Mit dieser Information
-	 * kann dann die globale Konvergenz abgeschaetzt werden.
-	 * 
-	 * @param outLeft
-	 *            der linke Outflow, den die Spalte in einem bestimmten globalen
-	 *            Iterationsschritt abegegeben hat.
-	 * @param inLeft
-	 *            der linke Inflow der Spalte, den die Spalte in demselben
-	 *            globalen Iterationsschritt abegegeben hat.
-	 * @param outRight
-	 *            der rechte Outflow der Spalte, den die Spalte in demselben
-	 *            globalen Iterationsschritt abegegeben hat.
-	 * @param inRight
-	 *            der rechte Inflow der Spalte, den die Spalte in demselben
-	 *            globalen Iterationsschritt abegegeben hat.
-	 * @return die Summe der Quadrate des horizontalen Flows aller Knoten der
-	 *         Spalte.
-	 */
-	synchronized protected double getDelta(double[] outLeft, double[] inLeft, double[] outRight, double[] inRight) {
-		double delta = 0.0;
-		for (int j = 0; j < height; j++) {
-			double val = ((outLeft[j] + outRight[j]) - (inLeft[j] + inRight[j]));
-			delta = val * val + delta;
-		}
-		return delta;
+		delta *= Math.signum(delta);
+		return delta < epsilon * width;
 	}
 
 	/**
@@ -214,7 +187,7 @@ abstract public class Column implements Callable<Double> {
 			sigma = sigma + val * val;
 			values[pos] = values[pos] + val;
 		}
-		return sigma <= epsilonSquareDivWidth;
+		return sigma <= epsilon * epsilon / width;
 	}
 
 	/**

@@ -52,7 +52,7 @@ public class RightBorder extends Column {
 	 *         Iterationen bezüglich des horizontalen Flows.
 	 */
 	@Override
-	public synchronized Double call() {
+	public synchronized Boolean call() {
 		if (this.hasValue())
 			localIteration();
 		/*
@@ -68,9 +68,9 @@ public class RightBorder extends Column {
 		 * Outflowtables statt und mit dem return werden die gemerkten
 		 * Referenzen wieder vergessen. Es gibt also keine Dataraces!
 		 */
-		double[] leftAccu = outLeft;
+		double[] out = outLeft;
 		exchange();
-		double ret = getDelta(leftAccu, outLeft);
+		boolean ret = getDelta(out, outLeft);
 		computeNewValues();
 		return ret;
 	}
