@@ -27,7 +27,7 @@ public class NPOsmose {
 		}
 		GraphInfo ginfo = gson.fromJson(json, GraphInfo.class);
 		 //Your implementation can now access ginfo to read out all important values
-		ImageConvertible graph = new Sequentiell(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
+		ImageConvertible graph = new Supervisor(ginfo).computeOsmose(); // <--- you should implement ImageConvertible to write the graph out
 		ginfo.write2File("./result.txt", graph);
 	}
 

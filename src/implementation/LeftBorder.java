@@ -22,8 +22,8 @@ public class LeftBorder extends Column {
 	 */
 	private double[][] rates;
 
-	public LeftBorder(GraphInfo graph, int y, Exchanger<double[]> right) {
-		super(graph, y);
+	public LeftBorder(GraphInfo graph, int y, Exchanger<double[]> right, int localIterations) {
+		super(graph, y, localIterations);
 
 		this.outRight = new double[graph.height];
 		this.rightEx = right;

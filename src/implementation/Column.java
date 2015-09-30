@@ -51,13 +51,14 @@ abstract public class Column implements Callable<Double> {
 	 * @param graph
 	 * @param y
 	 */
-	public Column(GraphInfo graph, int y) {
+	public Column(GraphInfo graph, int y, int localIterations) {
 
 		this.height = graph.height;
 		this.values = new double[graph.height];
 		this.akku = new double[graph.height];
 		this.me = y;
 		this.epsilonSquareDivWidth = graph.epsilon * graph.epsilon / graph.width;
+		this.localIterations = localIterations;
 
 		/*
 		 * Alle initialen Werte werden vom Konstruktor in der Hashtable values

@@ -30,6 +30,7 @@ public class Grid implements ImageConvertible {
 	 */
 	private double rem;
 	private int counter;
+	private int locals;
 	/**
 	 * Der Konstruktor erzeugt ein Grid Objekt, welches sich aus dem
 	 * mitgegebenen GraphInfo Objekt den Initialen Wert ausliest. Dieser
@@ -57,23 +58,23 @@ public class Grid implements ImageConvertible {
 					if(firstColumn == graph.width-1)
 					{
 					//init ist RightBorder.
-						column = new RightBorder(graph,firstColumn,null);
-						leftdummy = new LeftBorder(graph, firstColumn-1,null);
+						column = new RightBorder(graph,firstColumn,null,locals);
+						leftdummy = new LeftBorder(graph, firstColumn-1,null,locals);
 						rightdummy = null;
 					}
 					else if(firstColumn == 0)
 					{
 					//init ist LeftBorder.
-						column = new LeftBorder(graph,firstColumn,null);
-						rightdummy = new RightBorder(graph, firstColumn+1,null);
+						column = new LeftBorder(graph,firstColumn,null,locals);
+						rightdummy = new RightBorder(graph, firstColumn+1,null,locals);
 						leftdummy = null;
 					}
 					else
 					{
 						//erste column ist keine randspalte. d.h 2 dummies und eine mittelspalte.
-						column = new Middle(graph,firstColumn,null,null); //die exchanger sind aus der perspektive der Raender gesetzt. 
-						this.leftdummy = new LeftBorder(graph,firstColumn-1,null);
-						this.rightdummy = new RightBorder(graph,firstColumn+1,null);
+						column = new Middle(graph,firstColumn,null,null,locals); //die exchanger sind aus der perspektive der Raender gesetzt. 
+						this.leftdummy = new LeftBorder(graph,firstColumn-1,null,locals);
+						this.rightdummy = new RightBorder(graph,firstColumn+1,null,locals);
 					}
 					columns.put(firstColumn,column);
 					break;
@@ -119,16 +120,16 @@ public class Grid implements ImageConvertible {
 					{
 					//init ist RightBorder.
 						Exchanger<double[]> ex = new Exchanger<>();
-						column = new RightBorder(graph,firstColumn,ex);
-						leftdummy = new LeftBorder(graph, firstColumn-1,ex);
+						column = new RightBorder(graph,firstColumn,ex,locals);
+						leftdummy = new LeftBorder(graph, firstColumn-1,ex,locals);
 						rightdummy = null;
 					}
 					else if(firstColumn == 0)
 					{
 					//init ist LeftBorder.
 						Exchanger<double[]> ex = new Exchanger<>();
-						column = new LeftBorder(graph,firstColumn,ex);
-						rightdummy = new RightBorder(graph, firstColumn+1,ex);
+						column = new LeftBorder(graph,firstColumn,ex,locals);
+						rightdummy = new RightBorder(graph, firstColumn+1,ex,locals);
 						leftdummy = null;
 					}
 					else
@@ -137,9 +138,9 @@ public class Grid implements ImageConvertible {
 						Exchanger<double[]> leftEx, rightEx;
 						leftEx = new Exchanger<>();
 						rightEx = new Exchanger<>();
-						column = new Middle(graph,firstColumn,rightEx,leftEx); //die exchanger sind aus der perspektive der Raender gesetzt. 
-						this.leftdummy = new LeftBorder(graph,firstColumn-1,rightEx);
-						this.rightdummy = new RightBorder(graph,firstColumn+1,leftEx);
+						column = new Middle(graph,firstColumn,rightEx,leftEx,locals); //die exchanger sind aus der perspektive der Raender gesetzt. 
+						this.leftdummy = new LeftBorder(graph,firstColumn-1,rightEx,locals);
+						this.rightdummy = new RightBorder(graph,firstColumn+1,leftEx,locals);
 					}
 					columns.put(firstColumn,column);
 					break;
@@ -161,14 +162,14 @@ public class Grid implements ImageConvertible {
 		//Loeschen wenn alles fertig ist.
 		Exchanger<double[]> leftEx, rightEx;
 		rightEx = new Exchanger<double[]>();
-		columns.put(0, new LeftBorder(graph, 0, rightEx));
+		columns.put(0, new LeftBorder(graph, 0, rightEx,locals));
 		for (int i = 1; i < graph.width - 1; i++) {
 			leftEx = rightEx;
 			rightEx = new Exchanger<double[]>();
-			columns.put(i, new Middle(graph, i, leftEx, rightEx));
+			columns.put(i, new Middle(graph, i, leftEx, rightEx,locals));
 		}
 		leftEx = rightEx;
-		columns.put(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx));
+		columns.put(graph.width - 1, new RightBorder(graph, graph.width - 1, leftEx,locals));
 	}
 
 	/**
@@ -210,11 +211,11 @@ public class Grid implements ImageConvertible {
 						leftdummy = null;
 					}else{
 						Exchanger<double[]> newex = new Exchanger<>();
-						Middle newOne = new Middle(graph,edges[0],newex,leftdummy.getEx());
+						Middle newOne = new Middle(graph,edges[0],newex,leftdummy.getEx(),locals);
 						newOne.setValues(leftdummy.getValues());
 						columns.put(edges[0],newOne);
 						edges[0]  = edges[0] -1;
-						leftdummy = new LeftBorder(graph, edges[0],newex);
+						leftdummy = new LeftBorder(graph, edges[0],newex,locals);
 					}
 				}
 			}
@@ -227,11 +228,11 @@ public class Grid implements ImageConvertible {
 						rightdummy = null;
 					}else{
 						Exchanger<double[]> newex = new Exchanger<>();
-						Middle newOne = new Middle(graph,edges[1],newex,rightdummy.getEx());
+						Middle newOne = new Middle(graph,edges[1],newex,rightdummy.getEx(),locals);
 						newOne.setValues(rightdummy.getValues());
 						columns.put(edges[1],newOne);
 						edges[1]  = edges[1] +1;
-						rightdummy = new RightBorder(graph, edges[1],newex);
+						rightdummy = new RightBorder(graph, edges[1],newex,locals);
 					}
 				}
 			}
@@ -274,35 +275,38 @@ public class Grid implements ImageConvertible {
 		/*
 		 * führe auf allen Columns eine lokale Iteration aus:
 		 */
-		columns.values().forEach(column -> column.localIteration());
+		for (int i = edges[0]; i <= edges[1]; i++) 
+			columns.get(i).localIteration();
 		/*
 		 * tausche die den horizontalen Flow der Spalten aus:
 		 */
 		for (int i = edges[0]; i < edges[1]; i++) 
 			exchange(i);
 		
-		if(edges[0] > 0 && columns.get(edges[0]).hasValue())
-		{
-			edges[0] = edges[0]-1;
-			columns.put(edges[0],new Middle(graph, edges[0],null,null));
-		}
-		
-		if(edges[1] < graph.width -1 && columns.get(edges[1]).hasValue())
-		{
-			edges[1] = edges[1]+1;
-			columns.put(edges[1],new Middle(graph, edges[1], null,null));
-		}
 		/*
 		 * Zur Prüfung auf globale Konvergenz werden in sigma die Summen der
 		 * Quadrate der Knotendifferenzen der Spalen (serialSigma()) putiert.
 		 */
 		double sigma = 0.0;
-		for (Column c : columns.values())
-			sigma = sigma + c.serialSigma();
+		for (int i = edges[0]; i <= edges[1]; i++) 
+			sigma += columns.get(i).serialSigma();
 		/*
 		 * Jetzt werden die horizontalen Inflows auf die Kontenwerte putiert.
 		 */
-		columns.values().forEach(column -> column.computeNewValues());
+		for (int i = edges[0]; i <= edges[1]; i++) 
+			columns.get(i).computeNewValues();
+		
+		if(edges[0] > 0 && columns.get(edges[0]).hasValue())
+		{
+			edges[0] = edges[0]-1;
+			columns.put(edges[0],new Middle(graph, edges[0],null,null,locals));
+		}
+		
+		if(edges[1] < graph.width -1 && columns.get(edges[1]).hasValue())
+		{
+			edges[1] = edges[1]+1;
+			columns.put(edges[1],new Middle(graph, edges[1], null,null,locals));
+		}
 		/*
 		 * Rückgabe ist das globale Konvergenzkriterium in der Form: Summe der
 		 * Quadtate der Knotendifferenzen < Quadtat von Epsilon
@@ -326,15 +330,15 @@ public class Grid implements ImageConvertible {
 
 	@Override
 	public synchronized double getValueAt(int column, int row) {
-		return columns.getOrDefault(column, new Middle(graph, column, null, null)).getValue(row);
+		return columns.getOrDefault(column, new Middle(graph, column, null, null,locals)).getValue(row);
 	}
 	
 	public synchronized void extendByDummies()
 	{
 		if(leftdummy != null)
-			columns.put(edges[0],new Middle(graph,edges[0],null,null));
+			columns.put(edges[0],new Middle(graph,edges[0],null,null,locals));
 		if(rightdummy != null)
-			columns.put(edges[1],new Middle(graph,edges[1],null,null));
+			columns.put(edges[1],new Middle(graph,edges[1],null,null,locals));
 	}
 
 	/**
@@ -344,6 +348,7 @@ public class Grid implements ImageConvertible {
 	 *            Anzahl der lokalen Iterationen
 	 */
 	public synchronized void setLocals(int n) {
+		locals = n;
 		columns.values().forEach(column -> column.setLocals(n));
 		// Collection<Column> set = columns.values();
 		// set.stream().parallel().forEach(column -> column.setLocals(n));
