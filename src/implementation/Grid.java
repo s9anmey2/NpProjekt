@@ -56,16 +56,22 @@ public class Grid implements ImageConvertible {
 						column = new RightBorder(graph, firstColumn, null, localIterations);
 						leftdummy = new LeftBorder(graph, firstColumn - 1, null, localIterations);
 						rightdummy = null;
+						edges[0] = firstColumn - 1;
+						edges[1] = firstColumn;
 					} else if (firstColumn == 0) {
 						// init ist LeftBorder.
 						column = new LeftBorder(graph, firstColumn, null, localIterations);
 						rightdummy = new RightBorder(graph, firstColumn + 1, null, localIterations);
 						leftdummy = null;
+						edges[0] = firstColumn;
+						edges[1] = firstColumn + 1;
 					} else {
 						// init ist Middle
 						column = new Middle(graph, firstColumn, null, null, localIterations);
 						this.leftdummy = new LeftBorder(graph, firstColumn - 1, null, localIterations);
 						this.rightdummy = new RightBorder(graph, firstColumn + 1, null, localIterations);
+						edges[0] = firstColumn - 1;
+						edges[1] = firstColumn + 1;
 					}
 					columns.put(firstColumn, column);
 					break;
@@ -74,8 +80,6 @@ public class Grid implements ImageConvertible {
 			if (column != null)
 				break;
 		}
-		edges[0] = firstColumn - 1;
-		edges[1] = firstColumn + 1;
 		this.extendByDummies();
 	}
 
@@ -109,12 +113,16 @@ public class Grid implements ImageConvertible {
 						column = new RightBorder(graph, firstColumn, ex, localIterations);
 						leftdummy = new LeftBorder(graph, firstColumn - 1, ex, localIterations);
 						rightdummy = null;
+						edges[0] = firstColumn - 1;
+						edges[1] = firstColumn;
 					} else if (firstColumn == 0) {
 						// init ist LeftBorder.
 						Exchanger<double[]> ex = new Exchanger<>();
 						column = new LeftBorder(graph, firstColumn, ex, localIterations);
 						rightdummy = new RightBorder(graph, firstColumn + 1, ex, localIterations);
 						leftdummy = null;
+						edges[0] = firstColumn;
+						edges[1] = firstColumn + 1;
 					} else {
 						// init ist Middle
 						Exchanger<double[]> leftEx, rightEx;
@@ -123,6 +131,8 @@ public class Grid implements ImageConvertible {
 						column = new Middle(graph, firstColumn, rightEx, leftEx, localIterations);
 						this.leftdummy = new LeftBorder(graph, firstColumn - 1, rightEx, localIterations);
 						this.rightdummy = new RightBorder(graph, firstColumn + 1, leftEx, localIterations);
+						edges[0] = firstColumn - 1;
+						edges[1] = firstColumn + 1;
 					}
 					columns.put(firstColumn, column);
 					break;
@@ -131,8 +141,6 @@ public class Grid implements ImageConvertible {
 			if (column != null)
 				break;
 		}
-		edges[0] = firstColumn - 1;
-		edges[1] = firstColumn + 1;
 	}
 
 	/**
