@@ -186,8 +186,8 @@ public class LeftBorder extends Column {
 	public synchronized void setRight(double[] left) {
 		outRight = left;
 	}
-	
-	public synchronized Exchanger<double[]> getEx(){
+
+	public synchronized Exchanger<double[]> getEx() {
 		return rightEx;
 	}
 

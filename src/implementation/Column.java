@@ -62,7 +62,7 @@ abstract public class Column implements Callable<Double> {
 
 		/*
 		 * Alle initialen Werte werden vom Konstruktor in der Hashtable values
-		 * gesetzt, dazu werden die entsprechenden Eintraege erschaffen.FLIEGT NACHHER RAUS.
+		 * gesetzt, dazu werden die entsprechenden Eintraege erschaffen.
 		 */
 		HashMap<Integer, Double> initialMap = graph.column2row2initialValue.getOrDefault(y, new HashMap<>());
 
@@ -160,12 +160,10 @@ abstract public class Column implements Callable<Double> {
 	 * @return die Summe der Quadrate des horizontalen Flows aller Knoten der
 	 *         Spalte.
 	 */
-	synchronized protected double getDelta(double[] outLeft, double[] inLeft,
-			double[] outRight, double[] inRight) {
+	synchronized protected double getDelta(double[] outLeft, double[] inLeft, double[] outRight, double[] inRight) {
 		double delta = 0.0;
 		for (int j = 0; j < height; j++) {
-			double val = ((outLeft[j] + outRight[j])
-					- (inLeft[j] + inRight[j]));
+			double val = ((outLeft[j] + outRight[j]) - (inLeft[j] + inRight[j]));
 			delta = val * val + delta;
 		}
 		return delta;
@@ -185,8 +183,7 @@ abstract public class Column implements Callable<Double> {
 	 *            Die Abflussrate in eine bestimmte Richtung.
 	 * @return Absoluter Outflow, dieser wurde noch nicht gesetzt.
 	 */
-	protected synchronized double setAndComputeOutflow(double[] map, double val, int position,
-			double rate) {
+	protected synchronized double setAndComputeOutflow(double[] map, double val, int position, double rate) {
 		double ret = 0.0;
 		/*
 		 * Falls rate oder val 0 ist, aendert sich der Wert in der Map nicht,
@@ -210,8 +207,7 @@ abstract public class Column implements Callable<Double> {
 	 * @return true falls die Spalte einen lokal konvergenten Zustand erreicht
 	 *         hat
 	 */
-	synchronized protected boolean addAccuToValuesAndLocalConvergence(double[] akku,
-			double[] values) {
+	synchronized protected boolean addAccuToValuesAndLocalConvergence(double[] akku, double[] values) {
 		double sigma = 0.0;
 		for (int pos = 0; pos < height; pos++) {
 			double val = akku[pos];
@@ -252,22 +248,22 @@ abstract public class Column implements Callable<Double> {
 	public synchronized double getValue(int row) {
 		return values[row];
 	}
-	
-	public synchronized boolean hasValue(){
+
+	public synchronized boolean hasValue() {
 		boolean result = false;
-		for(double x : values)
+		for (double x : values)
 			result = result || (x > 0.0);
 		return result;
 	}
-	
-	public synchronized double[] getValues(){
+
+	public synchronized double[] getValues() {
 		return values;
 	}
-	
-	public synchronized void setValues(double[] init){
+
+	public synchronized void setValues(double[] init) {
 		this.values = init;
 	}
-	
+
 	abstract public double[] getLeft();
 
 	abstract public double[] getRight();

@@ -185,7 +185,7 @@ public class RightBorder extends Column {
 		return;
 	}
 
-	public synchronized Exchanger<double[]> getEx(){
+	public synchronized Exchanger<double[]> getEx() {
 		return leftEx;
 	}
 }

@@ -26,8 +26,7 @@ public class Middle extends Column {
 	 */
 	private double[][] rates;
 
-	public Middle(GraphInfo graph, int y, Exchanger<double[]> left,
-			Exchanger<double[]> right, int localIterations) {
+	public Middle(GraphInfo graph, int y, Exchanger<double[]> left, Exchanger<double[]> right, int localIterations) {
 		super(graph, y, localIterations);
 
 		this.outRight = new double[graph.height];

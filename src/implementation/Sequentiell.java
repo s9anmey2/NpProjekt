@@ -5,7 +5,7 @@ import np2015.GraphInfo;
 /**
  * Diese Klasse organisiert die sequentielle Ausführung eines Osmose Prozesses.
  * Diese Klasse ist ein Monitor. Ist fuer die konkrete Implementierung nicht
- * wichtig, aber man soll ja immer auf erweiterbarkeit achten.
+ * wichtig, aber man soll ja immer auf Erweiterbarkeit achten.
  */
 public class Sequentiell {
 

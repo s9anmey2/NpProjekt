@@ -44,7 +44,7 @@ public class Supervisor {
 	 *            Verfügung stellt.
 	 */
 	public Supervisor(GraphInfo graph) {
-		this.exe = Executors.newFixedThreadPool(graph.width); 
+		this.exe = Executors.newFixedThreadPool(graph.width);
 		/**
 		 * (s.http://docs.oracle.com/javase/7/docs/api/
 		 * java/util/concurrent/ExecutorService.html)

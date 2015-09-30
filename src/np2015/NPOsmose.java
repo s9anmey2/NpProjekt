@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import implementation.Sequentiell;
 import implementation.Supervisor;
 import com.google.gson.Gson;
 
