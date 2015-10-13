@@ -41,7 +41,7 @@ public class Sequentiell {
 	}
 
 	/**
-	 * Berechnet sequentiell einen Osmoseprozess eines Gitters bis zur
+	 * Berechnet sequentiell einen Osmoseprozess eines Gitters bis zur globalen
 	 * Konvergenz.
 	 * 
 	 * @return Grid Objekt (implementiert ImageConvertible)

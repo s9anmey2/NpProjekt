@@ -34,7 +34,7 @@ public class Supervisor {
 	 * 
 	 * Dieser Parameter kann individuell angepasst werden.
 	 */
-	private int maxLocal = 8;
+	private int maxLocal = 128;
 
 	/**
 	 * Erzeugt ein neues Supervisor Objekt.
@@ -76,10 +76,9 @@ public class Supervisor {
 		}
 		/*
 		 * Ab jetzt wird numLocalIteration nur noch verringert. globalIteration
-		 * gibt true zurück, wenn Inflow ~ Outflow oder über die
-		 * Iterationsschritte hinweg keine Verbesserung mehr erzielt wird. So
-		 * wird sichergestellt, dass bei Zyklen die Anzahl der lokalen
-		 * Iterationen verringert wird, was der Terminierung dient.
+		 * gibt true zurück, wenn Inflow ~ Outflow, so wird sichergestellt, dass
+		 * bei Zyklen die Anzahl der lokalen Iterationen verringert wird, was
+		 * der Terminierung dient.
 		 */
 		while (numLocalIterations > 1) {
 			while (!converged) {

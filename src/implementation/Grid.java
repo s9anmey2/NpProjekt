@@ -153,8 +153,8 @@ public class Grid implements ImageConvertible {
 	 */
 	public synchronized boolean globalIteration() {
 		/*
-		 * sum enthält die Summe der Knotendifferenzen bezüglich den
-		 * horizontalen Flows.
+		 * returnvalue enthält die Information, ob schon alle Spalten die lokale
+		 * (horizontale) Konvergenz erreicht haben.
 		 */
 		boolean returnvalue = true;
 		/*
@@ -272,7 +272,8 @@ public class Grid implements ImageConvertible {
 	}
 
 	/**
-	 * Taucht den Outflow im Falle der sequentiellen Ausführung.
+	 * Tauscht den Outflow von Spalte i mit Spalte i+1 im Falle der
+	 * sequentiellen Ausführung.
 	 * 
 	 * @param i
 	 *            Index der linken Spalte

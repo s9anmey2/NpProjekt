@@ -49,8 +49,8 @@ public class LeftBorder extends Column {
 	 * Führt die lokalen Iterationen aus (siehe Middle), angepasst auf den
 	 * fehlenden linken Nachbarn.
 	 * 
-	 * @return Summe der Quadrate der Änderung der Knotenwerte über alle lokalen
-	 *         Iterationen bezüglich des horizontalen Flows.
+	 * @return True, falls sich ein (horizontal) lokal konvergenter Zustand
+	 *         zwischen dieser und der rechten Nachbarspalte eingestellt hat.
 	 */
 	@Override
 	public synchronized Boolean call() {

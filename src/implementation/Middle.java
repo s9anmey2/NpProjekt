@@ -60,8 +60,8 @@ public class Middle extends Column {
 	 * computeNewValues() neu berechnet. Die Arbeit mit dem Akku findet in
 	 * localIteration() statt.
 	 * 
-	 * @return Summe der Quadrate der Änderung der Knotenwerte über alle lokalen
-	 *         Iterationen bezüglich des horizontalen Flows.
+	 * @return True, falls sich ein (horizontal) lokal konvergenter Zustand
+	 *         zwischen dieser und der rechten Nachbarspalte eingestellt hat.
 	 */
 	@Override
 	public synchronized Boolean call() {

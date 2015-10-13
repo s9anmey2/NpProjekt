@@ -31,13 +31,9 @@ abstract public class Column implements Callable<Boolean> {
 	protected double[] akku;
 
 	/*
-	 * height ist die Höhe der Spalte (Höhe des Gitters). LocalIterations wird
+	 * height und width sind Höhe und Breite des Gitters. LocalIterations wird
 	 * vom Supervisor ueber das Grid immer dann gesetzt, wenn sich die Zahl
-	 * aendert. me ist Id der Spalte. (MittelSpalten muessen das wissen, die
-	 * Raender wissen implizit wer sie sind. Trotzdem erhalten alle Kinder von
-	 * Column das Feld, weil es angenehmer zu programmieren und lesbarerer Code
-	 * ist, ueber eine Zeile mit ihrer Id zu sprechen als mit einem konkreten
-	 * Integer.)
+	 * aendert. me ist Id der Spalte.
 	 */
 	protected int height, width, me, localIterations;
 
@@ -81,8 +77,8 @@ abstract public class Column implements Callable<Boolean> {
 	 * die lokalen Iterationen ausgeführt, danach der Outflow mit den
 	 * Nachbarspalen getauscht und die neuen Knotenwerte berechnet.
 	 * 
-	 * @return Das Quadrat des euklidischen Abstandes des horizontalen Flows aus
-	 *         einem bestimmten globalen Iterationschritt.
+	 * @return True, falls sich ein (horizontal) lokal konvergenter Zustand
+	 *         zwischen dieser und der rechten Nachbarspalte eingestellt hat.
 	 */
 	@Override
 	abstract public Boolean call();
@@ -130,8 +126,8 @@ abstract public class Column implements Callable<Boolean> {
 	 * @param inflow
 	 *            Der Inflow, den diese Spalte in demselben globalen
 	 *            Iterationschritt erhalten hat.
-	 * @return das Quadrat des euklidischen Abstandes zwischen Inflow, Outflow
-	 *         am Ende desselben globalen Iterationsschrittes.
+	 * @return True, falls sich ein (horizontal) lokal konvergenter Zustand
+	 *         zwischen dieser und der rechten Nachbarspalte eingestellt hat.
 	 */
 	synchronized protected boolean getDelta(double[] outflow, double[] inflow) {
 		double delta = 0.0;
